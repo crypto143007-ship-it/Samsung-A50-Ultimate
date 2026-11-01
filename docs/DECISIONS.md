@@ -64,6 +64,24 @@
   and root/permissive config fragments. Commit `d6412f1d6` removes these
   legacy hooks and fragments from the Standard base. The official
   KernelSU-Next overlay remains a separate, not-yet-integrated edition.
+- **Clean-source Standard build:** `[VERIFIED-BUILD]` [Run
+  41279169551](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41279169551)
+  passed static checks and Standard config generation, compiled the clean
+  base with Proton Clang 13.0.0, and produced
+  `UPA50-standard-oneui-A12-v0.0.0.zip`. Validation correctly rejected the
+  package because `mint.prop` omitted the required
+  `ro.mint.build.ksu=false` marker; no artifact was uploaded. Keep this
+  manifest metadata for Standard without restoring any KSU code or config.
+- **KernelSU-Next integration audit:** `[VERIFIED-STATIC]` The pin is from
+  `https://github.com/KernelSU-Next/KernelSU-Next` at `v3.4.2`,
+  `4c706b5938665866ebe16944a481a7b91e3396af`; the tag resolves directly to
+  that commit. The provided `tiann/KernelSU-Next` repository path does not
+  resolve, so use the verified canonical repository. At the pinned source,
+  `kernel/Kconfig` requires `KPROBES && EXT4_FS`; both A50 defconfigs have
+  `CONFIG_KPROBES` unset and `CONFIG_EXT4_FS=y`. The upstream `kernel/setup.sh`
+  clones/pulls the moving repository, so UPA50 will instead use a CI-only
+  overlay pinned to the verified commit and enable KPROBES only for the
+  KernelSU-Next edition.
 - **Legacy line endings:** `[VERIFIED-STATIC]` The first full-tree CI scan
   found CRLF in 56 pre-existing C/header/Makefile files. No kernel source
   content was changed. The required global auto-text LF rule and explicit

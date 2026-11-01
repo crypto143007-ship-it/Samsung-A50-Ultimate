@@ -324,6 +324,11 @@ BUILD_PACKAGE() {
     {
         echo "ro.mint.build.date=$BUILD_DATE"
         echo "ro.mint.build.branch=$BUILD_KERNEL_BRANCH"
+        if [[ "${UPA50_EDITION:-standard}" == "kernelsu-next" ]]; then
+            echo "ro.mint.build.ksu=true"
+        else
+            echo "ro.mint.build.ksu=false"
+        fi
         echo "ro.mint.droid.device=${BUILD_DEVICE_NAME^}"
         echo "ro.mint.droid.variant=$MINT_VARIANT"
         [[ -n "${UPA50_EDITION:-}" ]] && echo "ro.upa50.edition=$UPA50_EDITION"
