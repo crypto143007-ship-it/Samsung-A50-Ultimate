@@ -7,19 +7,20 @@
   images free of SuSFS.
 - **Build policy:** All toolchain fetches, configuration, builds, validation,
   packaging, and release work run in GitHub Actions only.
-- **Last attempted commit:** `ae0a5afea3287da686f36644bb25922b2f0149e0`.
-- **Last CI run:** [UPA50 CI 41286220636](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41286220636)
+- **Last attempted commit:** `987332dc1`.
+- **Last CI run:** [UPA50 CI 41287769468](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41287769468)
   passed static checks, both configs, and the Standard build. The KSU-Next
-  v3.0.0 compile failed in `drivers/kernelsu/allowlist.c`: `TWA_RESUME` is
-  undefined and `put_task_struct` lacks its declaration in Linux 4.14. A
-  narrow source compatibility patch now maps the resume notification to the
-  baseline `task_work_add` boolean and includes `linux/sched/task.h`; its
-  rebuild is pending. The successful Standard package was
+  v3.0.0 build compiled past the task-work incompatibility and then failed in
+  `drivers/kernelsu/app_profile.c`: Linux 4.14 has no
+  `current->seccomp.filter_count`. A follow-up patch now releases the
+  seccomp-filter reference using the 4.14 helper before clearing the pointer
+  and removes the unavailable counter assignment; CI must verify it. The
+  successful Standard package was
   `UPA50-standard-oneui-A12-v0.0.0.zip` (20,924,452 bytes,
   SHA-256 `de55b7af7f99ff911b39de8467526e3cd3c2c23bf26f10de1ea4544de1f55eec`);
   artifact bundle `standard-oneui-android-12`, 58,775,929 bytes.
-- **Exact next commands:** `git diff --check`; commit the compatibility patch
-  and evidence updates with the required co-author trailer; push
+- **Exact next commands:** `git diff --check`; commit the seccomp compatibility
+  patch and evidence updates with the required co-author trailer; push
   `upa50/main`; inspect
   `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow upa50-ci.yml --limit 5`;
   review any failure with `gh run view <id> --log-failed`.

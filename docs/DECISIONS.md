@@ -137,16 +137,26 @@ which fetches a moving branch.
   is pending; this static compatibility evidence is not runtime/device
   validation.
 - **Linux 4.14 allowlist compatibility:** `[VERIFIED-BUILD]` The v3.0.0 build
-  in [run
+  initial build [run
   41286220636](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41286220636)
   reached `drivers/kernelsu/allowlist.c` and failed because the source passes
   the newer `TWA_RESUME` enum to `task_work_add` and lacks the header declaring
   `put_task_struct`. In the fork's 4.14 headers,
   `task_work_add(..., bool notify)` explicitly maps `true` to
   `set_notify_resume(task)`, and `put_task_struct` is declared in
-  `include/linux/sched/task.h` (`origin/android-14.0`). A focused CI overlay
-  patch now adds that include and passes `true`; this is behaviorally
-  equivalent to the required resume notification on the baseline API, but the
-  compatibility fix awaits a successful rebuild.
+  `include/linux/sched/task.h` (`origin/android-14.0`). The focused patch maps
+  the notification to `true` and adds that include. `[VERIFIED-BUILD]` The
+  follow-up [run
+  41287769468](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41287769468)
+  compiled past `allowlist.c` and failed later in `app_profile.c`.
+- **Linux 4.14 seccomp compatibility:** `[VERIFIED-STATIC]` The follow-up
+  build failed at `current->seccomp.filter_count`, which is absent from the
+  fork's `include/linux/seccomp.h`; its `struct seccomp` has only `mode` and
+  `filter`. The 4.14 API declares `put_seccomp_filter()` (with a no-op stub
+  when seccomp filtering is disabled), and `kernel/seccomp.c` uses it to
+  release the task's filter reference before replacing the filter pointer.
+  The new compatibility patch calls this helper before clearing that pointer
+  and removes the unsupported `filter_count` reset. This preserves reference
+  cleanup but awaits CI compilation.
 
 No physical-device test has been performed.

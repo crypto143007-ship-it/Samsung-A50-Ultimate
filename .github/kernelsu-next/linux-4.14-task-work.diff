@@ -6,3 +6,10 @@ diff --git a/kernel/allowlist.c b/kernel/allowlist.c
 @@ -427 +428 @@
 -	task_work_add(tsk, cb, TWA_RESUME);
 +	task_work_add(tsk, cb, true);
+diff --git a/kernel/app_profile.c b/kernel/app_profile.c
+--- a/kernel/app_profile.c
++++ b/kernel/app_profile.c
+@@ -69,0 +70 @@
++	put_seccomp_filter(current);
+@@ -71 +72,0 @@
+-	atomic_set(&current->seccomp.filter_count, 0);

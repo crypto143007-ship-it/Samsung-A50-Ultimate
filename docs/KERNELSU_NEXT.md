@@ -24,7 +24,13 @@ The KernelSU-Next v3.0.0 build reached `drivers/kernelsu/allowlist.c` but failed
 on the newer `TWA_RESUME` argument and missing `put_task_struct` declaration,
 which are not present in the Linux 4.14.194 APIs as used by this source.
 
-[PROPOSED] A narrow Linux 4.14 compatibility patch now includes
-`linux/sched/task.h` and maps `TWA_RESUME` to the baseline `task_work_add`
-notification boolean (`true`). It is not build-verified yet. No
-KernelSU-Next build or device functionality is verified.
+[VERIFIED-BUILD] In the rebuild [UPA50 CI
+41287769468](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41287769468),
+the task-work patch compiled, and the build advanced to
+`drivers/kernelsu/app_profile.c`. It then failed because the 4.14 seccomp
+structure has no `filter_count` member.
+
+[PROPOSED] The next compatibility patch releases the current task's filter
+reference with the baseline `put_seccomp_filter()` helper before clearing the
+filter pointer, and removes only the unsupported counter reset. It is not
+build-verified yet. No KernelSU-Next build or device functionality is verified.
