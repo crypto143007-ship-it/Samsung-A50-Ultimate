@@ -9,15 +9,19 @@ Samsung Exynos 9610 kernel source in this repository.
 
 ## Repository baseline
 
-- Repository: [`crypto143007-ship-it/Samsung-A50-Ultimate`](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate)
-- Device tree: `a50`
-- Kernel version at the fork baseline: Linux 4.14.194, `Petit Gorille`
-- Fork baseline commit: `bec0c2aff1ee8a02ac9f582d60fe611f1d2bc939`
-- License: GPL-2.0; see `COPYING`
+- [VERIFIED-STATIC] Repository:
+  [`crypto143007-ship-it/Samsung-A50-Ultimate`](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate)
+- [VERIFIED-STATIC] Device tree: `a50`
+- [VERIFIED-STATIC] Kernel version at the fork baseline: Linux 4.14.194,
+  `Petit Gorille`
+- [VERIFIED-STATIC] Fork baseline commit:
+  `bec0c2aff1ee8a02ac9f582d60fe611f1d2bc939`
+- [VERIFIED-STATIC] License: GPL-2.0; see `COPYING`
 
-The fork's default `android-14.0` branch is retained as the upstream comparison
-baseline. UPA50 work is being done on `upa50/main`. Base-kernel selection and
-Android/ROM compatibility remain under investigation; see
+[VERIFIED-STATIC] The fork's default `android-14.0` branch is retained as the
+upstream comparison baseline. UPA50 work is being done on `upa50/main`.
+[PROPOSED] Base-kernel selection and Android/ROM compatibility remain under
+investigation; see
 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) and
 [`docs/upstream-analysis/`](docs/upstream-analysis/).
 
@@ -33,10 +37,12 @@ Every project claim must use one of these labels:
 
 ## Safety and support
 
-[VERIFIED-STATIC] UPA50 does not claim unsupported frequency or voltage changes,
-and future profiles must preserve thermal, charging, and battery protections.
-Device variants, ROM support, boot behavior, SELinux mode, and hardware
-compatibility are not yet established. Do not flash this development branch.
+[VERIFIED-STATIC] No unsupported frequency or voltage changes have been made
+on this branch.
+[PROPOSED] Future profiles must preserve thermal, charging, and battery
+protections. Device variants, ROM support, boot behavior, SELinux mode, and
+hardware compatibility are not yet established. Do not flash this development
+branch.
 
 ## Build and installation
 
@@ -46,14 +52,15 @@ validation are complete. No UPA50 release is currently available.
 
 ## Upstream attribution
 
-UPA50 is derived from the FreshROMs Mint Exynos9610 kernel fork. Preserve its
-source history, notices, and GPL-2.0 obligations. Mint's contributor
-acknowledgments are retained below; additional imports will be listed in
-`docs/IMPORTED_PATCHES.md`.
+[VERIFIED-STATIC] UPA50 is derived from the FreshROMs Mint Exynos9610 kernel
+fork. Preserve its source history, notices, and GPL-2.0 obligations. Mint's
+contributor acknowledgments are retained below; additional imports will be
+listed in `docs/IMPORTED_PATCHES.md`.
 
 ### Mint source references and contributors
 
-The Mint kernel source acknowledges the following projects and contributors:
+[VERIFIED-STATIC] The Mint kernel source acknowledges the following projects
+and contributors:
 
 - [Cruel Kernel for Galaxy S10/Note10](https://github.com/CruelKernel/samsung-exynos9820/) (@evdenis)
 - [GaltsGulch for OnePlus 7](https://github.com/RealJohnGalt/GaltsGulch-sm8150) (@RealJohnGalt)
@@ -66,7 +73,8 @@ The Mint kernel source acknowledges the following projects and contributors:
 - [Zeus Kernel for Galaxy Note9](https://github.com/THEBOSS619/Note9-Zeus-Q10.0) (@THEBOSS619)
 - [Custom Galaxy A51 Kernel](https://github.com/ianmacd/a51xx) (@ianmacd)
 - [StormBreaker](https://github.com/stormbreaker-project/kernel_xiaomi_surya) and [Stratosphere](https://github.com/Stratosphere-Kernel/android_kernel_xiaomi_surya) for POCO X3
+- [Artemis Kernel for Pixel 4 XL](https://github.com/celtare21/kernel_google_coral) (@celtare21)
 - [GS101/Tensor SoC kernel source](https://github.com/AndreiLux/GS101) (@Google/@AndreiLux)
 
-This list reflects the source README at the fork baseline; it is not a complete
-provenance inventory for all files in the kernel tree.
+[VERIFIED-STATIC] This list reflects the source README at the fork baseline;
+it is not a complete provenance inventory for all files in the kernel tree.

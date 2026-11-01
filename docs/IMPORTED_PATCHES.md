@@ -1,7 +1,7 @@
 # Imported patches
 
-No upstream commits or kernel-source patches have been imported onto
-`upa50/main`.
+[VERIFIED-STATIC] No upstream commits or kernel-source patches have been
+imported onto `upa50/main`.
 
 Record each future import with:
 
