@@ -137,7 +137,7 @@ which fetches a moving branch.
   is pending; this static compatibility evidence is not runtime/device
   validation.
 - **Linux 4.14 allowlist compatibility:** `[VERIFIED-BUILD]` The v3.0.0 build
-  initial build [run
+  in [run
   41286220636](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41286220636)
   reached `drivers/kernelsu/allowlist.c` and failed because the source passes
   the newer `TWA_RESUME` enum to `task_work_add` and lacks the header declaring
@@ -156,7 +156,15 @@ which fetches a moving branch.
   when seccomp filtering is disabled), and `kernel/seccomp.c` uses it to
   release the task's filter reference before replacing the filter pointer.
   The new compatibility patch calls this helper before clearing that pointer
-  and removes the unsupported `filter_count` reset. This preserves reference
-  cleanup but awaits CI compilation.
+  and removes the unsupported `filter_count` reset. `[VERIFIED-BUILD]` In [run
+  41288696197](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41288696197),
+  compilation advanced past `app_profile.c`, confirming the compatibility
+  change compiles; the build later failed in `sucompat.c`.
+- **Linux 4.14 page-table include compatibility:** `[VERIFIED-STATIC]` The
+  v3.0.0 `kernel/sucompat.c` compile failed because it includes
+  `linux/pgtable.h`, which does not exist in this 4.14 tree. Source inspection
+  found no page-table identifiers used in that file beyond the include, and
+  `include/linux/mm.h` already includes `asm/pgtable.h`. The compatibility
+  patch removes only the unused include; this is pending CI.
 
 No physical-device test has been performed.

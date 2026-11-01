@@ -13,3 +13,8 @@ diff --git a/kernel/app_profile.c b/kernel/app_profile.c
 +	put_seccomp_filter(current);
 @@ -71 +72,0 @@
 -	atomic_set(&current->seccomp.filter_count, 0);
+diff --git a/kernel/sucompat.c b/kernel/sucompat.c
+--- a/kernel/sucompat.c
++++ b/kernel/sucompat.c
+@@ -5 +5,0 @@
+-#include <linux/pgtable.h>
