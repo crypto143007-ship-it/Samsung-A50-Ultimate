@@ -27,6 +27,38 @@
 - **Decision:** SuSFS is not included by default. Standard must eventually exclude KSU/KernelSU-Next/SuSFS code and configuration; a separate KernelSU-Next edition must use the official upstream component.
 - **Status:** [PROPOSED] No source changes have implemented this policy yet. Exact KSU integration, version, commit, and hooks remain to be verified against upstream source.
 
+## Inherited workflow containment
+
+- **Decision:** [VERIFIED-STATIC] Make the inherited `development.yml`,
+  `galaxy-a50.yml`, and `kernelsu.yml` manual-dispatch-only inert stubs with
+  read-only repository permissions. Do not retain their publishers or
+  self-updating behavior.
+- **`development.yml`:** [VERIFIED-STATIC] Previously ran on manual dispatch
+  and `wip-*` pushes; built eight development variants twice (without root
+  and with the old KernelSU), uploaded images/configs/ZIP artifacts, merged
+  package artifacts, deleted older `xbeta` releases, and published a new
+  `xbeta-*_a50dx` release using `Release-AIO`.
+- **`galaxy-a50.yml`:** [VERIFIED-STATIC] Previously ran on manual dispatch
+  and every `android-*` push; built four variants both without root and with
+  old KernelSU, uploaded images/configs/ZIP artifacts, and published a
+  `mainline-*_a50dx` release labeled Mint Stable using `Release-AIO`. Its
+  trigger and publication behavior could run for changes to the protected
+  baseline branch.
+- **`kernelsu.yml`:** [VERIFIED-STATIC] Previously checked out the
+  `KernelSU` submodule, updated it from a moving upstream ref, committed the
+  result, and pushed it back to the triggering branch with the workflow token.
+  It did not pin the update or require review.
+- **Containment result:** [VERIFIED-STATIC] The three workflows now only run
+  an informational echo on explicit manual dispatch. They do not check out
+  code, build, upload artifacts, delete releases, publish releases, create
+  tags, or push commits. The UPA50-specific CI workflow is a separate,
+  forthcoming task; no build or release is enabled by these stubs.
+- **PR merge condition:** [VERIFIED-STATIC] PR #1 was unsafe to merge before
+  the containment commit because the inherited workflows could publish and
+  mutate branches. It is safe with respect to those inherited publishers
+  only after this containment commit is present on the PR branch and reviewed;
+  this does not certify the forthcoming build workflow or complete project.
+
 ## Read-only upstream repository identity checks
 
 - **SOVR canonical name:** [VERIFIED-STATIC] GitHub resolves `ruuiii-tk/SOVR-Kernel-A50` to `SOVR-Technologies/SOVR-Kernel-A50`. The latter reports `main` as its default branch and is not itself a fork.

@@ -2,12 +2,12 @@
 
 ## Current checkpoint
 
-- **Current activity:** Stage 1–3 source-baseline verification and base decision; no stage is complete.
+- **Current activity:** Gate 1 - neutralize inherited publishers; no stage is complete.
 - **Current branch:** `upa50/main`, created from `origin/android-14.0`
-- **Last good project commit:** `eecdf9c3b6478d427d8e2ffa0cbc3f1332032be8` — UPA50 baseline documentation
+- **Last good project commit:** `f9f426dce5fd34f189cdf143ab42d24c81641aca` — baseline decision, release validator, and device-test materials
 - **Review:** [PR #1](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/pull/1) is open against `android-14.0`.
 - **Current limitation:** [VERIFIED-STATIC] This Windows host has no WSL optional component or distribution. Kernel compilation must run on GitHub Actions `ubuntu-22.04`; no local kernel build has been attempted.
-- **Next actions:** current stage 1–3; last good commit `eecdf9c3b6478d427d8e2ffa0cbc3f1332032be8`; failing/unverified step is comparative toolchain configuration/build (SOVR full history is also unavailable). Next commands: `git diff --check`; run the release-validator tests; commit and push this checkpoint to `upa50/main`; then dispatch Ubuntu 22.04 CI only after a pinned toolchain and edition-safe build inputs are in place. The master prompt is attached and available; do not mark stages complete without their exit evidence.
+- **NEXT ACTIONS:** current gate 1; last green CI run: none; last failing CI run/step: none. Commit the inert-workflow containment and exact workflow history in `docs/DECISIONS.md`, run the publisher-pattern grep under `.github/`, push `upa50/main`, and update PR #1. Then start the toolchain-lock/build-workflow gate. The master prompt is attached and available; do not mark any stage complete without exit evidence.
 
 ## Stage tracker
 
@@ -21,7 +21,7 @@
 | 6 | Performance, power, and silicon audit | Not started | [PROPOSED] | No tuning or silicon claims made. |
 | 7 | KernelSU-Next integration and SuSFS decision | Not started | [PROPOSED] | Fork currently references `rsuntk/KernelSU`; official integration is not present. |
 | 8 | Three performance profiles | Not started | [PROPOSED] | No profile implementation exists. |
-| 9 | Build system and CI/CD | Not started | [VERIFIED-STATIC] | Three inherited Mint workflows exist. Release jobs now fail closed unless all expected ZIP packages pass CRC, payload, and path checks; this gate has not yet run in Actions. No UPA50 build workflow exists. |
+| 9 | Build system and CI/CD | Not started | [VERIFIED-STATIC] | The three inherited workflows are being reduced to inert manual-only stubs; no UPA50 build workflow exists and no Actions run has occurred. |
 | 10 | Compile both editions | Not started | [PROPOSED] | No build has been run. |
 | 11 | Resolve build/integration failures | Not started | [PROPOSED] | No build attempt has been run. |
 | 12 | Artifact validation | Not started | [PROPOSED] | No UPA50 artifacts exist. |
