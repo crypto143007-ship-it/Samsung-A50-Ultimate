@@ -18,8 +18,26 @@ diff --git a/kernel/sucompat.c b/kernel/sucompat.c
 +++ b/kernel/sucompat.c
 @@ -5 +5,0 @@
 -#include <linux/pgtable.h>
-@@ -24,0 +24,10 @@
-+static long ksu_strncpy_from_user_nofault_compat(char *dst,
+@@ -83 +82 @@
+-	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
++	ksu_strncpy_from_user_nofault_compat(path, *filename_user, sizeof(path));
+@@ -108 +107 @@
+-	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
++	ksu_strncpy_from_user_nofault_compat(path, *filename_user, sizeof(path));
+@@ -137 +136 @@
+-	ret = strncpy_from_user_nofault(path, fn, sizeof(path));
++	ret = ksu_strncpy_from_user_nofault_compat(path, fn, sizeof(path));
+@@ -140 +139 @@
+-		ret = strncpy_from_user_nofault(path, fn, sizeof(path));
++		ret = ksu_strncpy_from_user_nofault_compat(path, fn, sizeof(path));
+diff --git a/kernel/util.h b/kernel/util.h
+--- a/kernel/util.h
++++ b/kernel/util.h
+@@ -4 +4,12 @@
+ #include <linux/types.h>
++#include <linux/uaccess.h>
++
++static inline long ksu_strncpy_from_user_nofault_compat(char *dst,
 +		const char __user *src, long count)
 +{
 +	long ret;
@@ -29,15 +47,12 @@ diff --git a/kernel/sucompat.c b/kernel/sucompat.c
 +	pagefault_enable();
 +	return ret;
 +}
-@@ -83 +92 @@
--	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
-+	ksu_strncpy_from_user_nofault_compat(path, *filename_user, sizeof(path));
-@@ -108 +117 @@
--	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
-+	ksu_strncpy_from_user_nofault_compat(path, *filename_user, sizeof(path));
-@@ -137 +146 @@
+diff --git a/kernel/syscall_hook_manager.c b/kernel/syscall_hook_manager.c
+--- a/kernel/syscall_hook_manager.c
++++ b/kernel/syscall_hook_manager.c
+@@ -258 +258 @@
 -	ret = strncpy_from_user_nofault(path, fn, sizeof(path));
 +	ret = ksu_strncpy_from_user_nofault_compat(path, fn, sizeof(path));
-@@ -140 +149 @@
+@@ -260 +260 @@
 -		ret = strncpy_from_user_nofault(path, fn, sizeof(path));
 +		ret = ksu_strncpy_from_user_nofault_compat(path, fn, sizeof(path));

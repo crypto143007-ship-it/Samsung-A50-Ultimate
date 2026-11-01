@@ -41,9 +41,15 @@ the seccomp compatibility change compiled and the build advanced to
 the build passed the missing-include failure and then stopped because
 `strncpy_from_user_nofault` is not available in Linux 4.14.
 
-[PROPOSED] The pinned `sucompat.c` uses no page-table identifiers, and Linux
-4.14's `linux/mm.h` already includes `asm/pgtable.h`, so the overlay removes
-the unused `linux/pgtable.h` include. It also adds a local wrapper around
-`strncpy_from_user()` with page faults disabled, preserving the no-fault
-semantics needed by the syscall hooks. Neither change is build-verified yet.
-No KernelSU-Next build or device functionality is verified.
+[VERIFIED-BUILD] In [UPA50 CI
+41291229799](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41291229799),
+the no-fault compatibility code compiled in `sucompat.c`; compilation then
+failed in `syscall_hook_manager.c` on the same no-fault helper and
+`untagged_addr` declaration.
+
+[PROPOSED] The overlay removes the unused `linux/pgtable.h` include (the file
+uses no page-table identifiers and `linux/mm.h` includes `asm/pgtable.h`). It
+places the no-fault user-copy wrapper in shared `util.h`, using 4.14's
+`pagefault_disable()` / `pagefault_enable()` around `strncpy_from_user()`, and
+exposes ARM64's `untagged_addr` via `linux/uaccess.h`. These changes remain
+pending CI. No KernelSU-Next build or device functionality is verified.

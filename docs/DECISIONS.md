@@ -172,8 +172,18 @@ which fetches a moving branch.
   next failure was three references to `strncpy_from_user_nofault`, absent
   from this baseline. In 4.14, `strncpy_from_user()` is implemented through
   exception-table user access, and `pagefault_disable()` / `pagefault_enable()`
-  are available. A local compatibility helper now brackets the copy with
-  those calls to preserve no-fault behavior in the syscall hooks. This remains
-  pending CI compilation.
+  are available. A shared compatibility helper brackets the copy with those
+  calls to preserve no-fault behavior in the syscall hooks. `[VERIFIED-BUILD]`
+  In [run
+  41291229799](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41291229799),
+  the helper compiled in `sucompat.c`; compilation then found equivalent
+  references in `syscall_hook_manager.c`.
+- **Linux 4.14 syscall-hook uaccess includes:** `[VERIFIED-STATIC]` The
+  follow-up build reports implicit declarations of `untagged_addr` and
+  `strncpy_from_user_nofault` in `syscall_hook_manager.c`. ARM64 4.14 defines
+  `untagged_addr` in `asm/uaccess.h`, exposed via `linux/uaccess.h`; the
+  no-fault function is provided by the shared compatibility helper. The patch
+  updates both call sites and adds `linux/uaccess.h` through `util.h`; this
+  awaits CI.
 
 No physical-device test has been performed.
