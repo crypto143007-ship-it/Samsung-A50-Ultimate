@@ -61,9 +61,9 @@
   `32548de0179fb1b075c87f5ff19751ea6db12f25`), the `drivers/kernelsu` symlink,
   Kconfig/Makefile integration, five manual hooks in `fs/exec.c`,
   `fs/open.c`, `fs/read_write.c`, `fs/stat.c` and `drivers/input/input.c`,
-  and root/permissive config fragments. These legacy hooks and fragments are
-  being removed from the Standard base. The official KernelSU-Next overlay is
-  a separate not-yet-integrated edition.
+  and root/permissive config fragments. Commit `d6412f1d6` removes these
+  legacy hooks and fragments from the Standard base. The official
+  KernelSU-Next overlay remains a separate, not-yet-integrated edition.
 - **Legacy line endings:** `[VERIFIED-STATIC]` The first full-tree CI scan
   found CRLF in 56 pre-existing C/header/Makefile files. No kernel source
   content was changed. The required global auto-text LF rule and explicit
