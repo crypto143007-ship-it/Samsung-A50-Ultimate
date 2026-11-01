@@ -7,20 +7,18 @@
   images free of SuSFS.
 - **Build policy:** All toolchain fetches, configuration, builds, validation,
   packaging, and release work run in GitHub Actions only.
-- **Last attempted commit:** `6fdd9d43d`.
-- **Last CI run:** [UPA50 CI 41291229799](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41291229799)
+- **Last attempted commit:** `c1341f2b3`.
+- **Last CI run:** [UPA50 CI 41293315969](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41293315969)
   passed static checks, both configs, and the Standard build. The KSU-Next
-  v3.0.0 build compiled past the task-work, seccomp, page-table include, and
-  `sucompat.c` no-fault compatibility changes, then failed in
-  `drivers/kernelsu/syscall_hook_manager.c` because it also uses
-  `strncpy_from_user_nofault` and did not expose ARM64's `untagged_addr`
-  definition. A shared no-fault wrapper now covers both files and includes
-  `linux/uaccess.h`; CI must verify it. The successful Standard package was
+  v3.0.0 build failed while compiling the new shared no-fault helper because
+  the `util.h` patch hunk count omitted its closing brace. The hunk count is
+  corrected; CI must verify both the helper and the syscall-hook API changes.
+  The successful Standard package was
   `UPA50-standard-oneui-A12-v0.0.0.zip` (20,924,452 bytes,
   SHA-256 `de55b7af7f99ff911b39de8467526e3cd3c2c23bf26f10de1ea4544de1f55eec`);
   artifact bundle `standard-oneui-android-12`, 58,775,929 bytes.
-- **Exact next commands:** `git diff --check`; commit the shared no-fault
-  user-copy/uaccess compatibility update and evidence with the required
+- **Exact next commands:** `git diff --check`; commit the corrected shared
+  no-fault user-copy/uaccess compatibility patch and evidence with the required
   co-author trailer; push
   `upa50/main`; inspect
   `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow upa50-ci.yml --limit 5`;

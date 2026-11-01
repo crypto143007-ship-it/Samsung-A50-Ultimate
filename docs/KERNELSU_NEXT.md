@@ -47,9 +47,14 @@ the no-fault compatibility code compiled in `sucompat.c`; compilation then
 failed in `syscall_hook_manager.c` on the same no-fault helper and
 `untagged_addr` declaration.
 
+[VERIFIED-BUILD] The shared-helper follow-up in [UPA50 CI
+41293315969](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41293315969)
+failed because the patch's `util.h` hunk omitted the helper's closing brace.
+
 [PROPOSED] The overlay removes the unused `linux/pgtable.h` include (the file
 uses no page-table identifiers and `linux/mm.h` includes `asm/pgtable.h`). It
 places the no-fault user-copy wrapper in shared `util.h`, using 4.14's
 `pagefault_disable()` / `pagefault_enable()` around `strncpy_from_user()`, and
-exposes ARM64's `untagged_addr` via `linux/uaccess.h`. These changes remain
-pending CI. No KernelSU-Next build or device functionality is verified.
+exposes ARM64's `untagged_addr` via `linux/uaccess.h`. The hunk count is
+corrected; these changes remain pending CI. No KernelSU-Next build or device
+functionality is verified.

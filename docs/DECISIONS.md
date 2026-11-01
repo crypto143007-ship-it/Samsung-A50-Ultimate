@@ -185,5 +185,12 @@ which fetches a moving branch.
   no-fault function is provided by the shared compatibility helper. The patch
   updates both call sites and adds `linux/uaccess.h` through `util.h`; this
   awaits CI.
+- **Shared no-fault helper patch correction:** `[VERIFIED-BUILD]` The
+  follow-up [run
+  41293315969](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41293315969)
+  failed while compiling `sucompat.c`: the `util.h` patch hunk count omitted
+  the helper's final closing brace. The helper is complete in the patch
+  source; its hunk count is corrected and the next Actions build will verify
+  it.
 
 No physical-device test has been performed.
