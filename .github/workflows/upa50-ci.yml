@@ -1,0 +1,362 @@
+name: UPA50 CI
+
+on:
+  push:
+    branches:
+      - 'upa50/**'
+  pull_request:
+    branches:
+      - upa50/main
+      - android-14.0
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upa50-ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 2
+
+      - name: Check changed source and build-input line endings
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          source_extensions = {
+              ".c", ".h", ".S", ".s", ".sh", ".py", ".config", ".conf",
+              ".dts", ".dtsi", ".mk", ".yml", ".yaml", ".md",
+          }
+          tracked = subprocess.check_output(["git", "ls-files", "-z"]).split(b"\0")
+          changed = subprocess.check_output(
+              ["git", "diff", "--name-only", "-z", "--diff-filter=ACMRT", "HEAD^", "HEAD"]
+          ).split(b"\0")
+          files = {
+              raw.decode()
+              for raw in tracked
+              if raw and raw.decode().endswith((".sh", ".config", ".conf"))
+          }
+          files.update(
+              raw.decode()
+              for raw in changed
+              if raw
+              and (
+                  raw.decode().rsplit("/", 1)[-1] == "Makefile"
+                  or raw.decode().rsplit("/", 1)[-1].startswith("Kconfig")
+                  or raw.decode().endswith(tuple(source_extensions))
+              )
+          )
+          bad = []
+          for path in sorted(files):
+              if not Path(path).is_file():
+                  continue
+              with open(path, "rb") as source:
+                  if b"\r\n" in source.read():
+                      bad.append(path)
+          if bad:
+              print("CRLF line endings found:", *bad, sep="\n", file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: Check shell and workflow syntax
+        run: |
+          bash -n build.sh scripts/*.sh .github/scripts/*.sh
+          ruby -e 'require "yaml"; ARGV.each { |file| YAML.parse_file(file) }' .github/workflows/*.yml
+          python3 -m py_compile scripts/*.py
+
+      - name: Check for credentials and unsafe inherited publishers
+        run: |
+          if grep -RniE '(ghp_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{80,}|AKIA[0-9A-Z]{16})' \
+            --exclude-dir=.git --exclude='*.png' --exclude='*.jpg' .; then
+            echo "Credential-like value found in tracked source"
+            exit 1
+          fi
+          if git grep -n -Ei 'CONFIG_KSU|drivers/kernelsu|ksu_(execveat|handle_|input_hook|vfs_read_hook)|susfs|rsuntk/KernelSU' \
+            -- drivers fs; then
+            echo "Legacy KernelSU integration remains in the Standard base"
+            exit 1
+          fi
+          test ! -e KernelSU
+          test ! -e drivers/kernelsu
+          if grep -RniE '(gh[[:space:]]+release[[:space:]]+delete|git[[:space:]]+push|Release[-]AIO|softprops/action-gh[-]release)' \
+            .github/workflows; then
+            echo "Unreviewed release or branch mutation found in a workflow"
+            exit 1
+          fi
+
+      - name: Check diff formatting
+        run: git diff --check
+
+  config:
+    runs-on: ubuntu-22.04
+    needs: static
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: [standard, kernelsu-next]
+    steps:
+      - name: Free runner disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/hostedtoolcache/CodeQL /usr/share/dotnet
+          df -h
+
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Cache pinned Proton source
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ${{ runner.temp }}/upa50-toolchain-sources/proton
+          key: upa50-proton-32074ae4fc8e2269569fdff26a22da037388c3e3
+
+      - name: Prepare verified toolchain
+        id: toolchain
+        run: ./scripts/prepare_toolchain.sh verify proton
+
+      - name: Install kernel build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache cpio flex \
+            lib32stdc++6 libc6-dev-i386 libelf-dev libncurses-dev libssl-dev \
+            lz4 python3 zip unzip
+
+      - name: Set up pinned KernelSU-Next overlay
+        if: matrix.edition == 'kernelsu-next'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ${{ runner.temp }}/KernelSU-Next
+          key: upa50-kernelsu-next-${{ hashFiles('kernelsu-next.lock') }}
+
+      - name: Apply pinned KernelSU-Next overlay
+        if: matrix.edition == 'kernelsu-next'
+        run: |
+          bash .github/scripts/setup-kernelsu-next.sh "$RUNNER_TEMP/KernelSU-Next"
+
+      - name: Generate edition configuration
+        env:
+          UPA50_TOOLCHAIN_DIR: ${{ steps.toolchain.outputs.toolchain_dir }}
+          UPA50_TOOLCHAIN_KIND: proton
+          UPA50_SKIP_TOOLCHAIN_FETCH: "1"
+          UPA50_USE_CCACHE: "1"
+          UPA50_EDITION: ${{ matrix.edition }}
+          UPA50_VERSION: "0.0.0"
+        run: |
+          bash ./build.sh --automated --device a50 --variant oneui --android 12 --config-only
+          cp out/UPA50-oneui-A12.config .config
+          printf 'Edition: %s\nVariant: oneui\nAndroid: 12\n' \
+            "${{ matrix.edition }}" >> BUILD_INFO.txt
+
+      - name: Upload generated configuration
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ matrix.edition }}-oneui-android-12-config
+          path: |
+            .config
+            BUILD_INFO.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  build:
+    runs-on: ubuntu-22.04
+    needs: [static, config]
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: [standard, kernelsu-next]
+        variant: [oneui]
+        android: [12]
+    steps:
+      - name: Free runner disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/hostedtoolcache/CodeQL /usr/share/dotnet
+          df -h
+
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Cache pinned Proton source
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ${{ runner.temp }}/upa50-toolchain-sources/proton
+          key: upa50-proton-32074ae4fc8e2269569fdff26a22da037388c3e3
+
+      - name: Cache ccache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ~/.cache/ccache
+          key: upa50-ccache-${{ runner.os }}-${{ matrix.edition }}-${{ matrix.variant }}-a${{ matrix.android }}-${{ github.sha }}
+          restore-keys: |
+            upa50-ccache-${{ runner.os }}-${{ matrix.edition }}-${{ matrix.variant }}-a${{ matrix.android }}-
+
+      - name: Prepare verified toolchain
+        id: toolchain
+        run: ./scripts/prepare_toolchain.sh verify proton
+
+      - name: Install kernel build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache cpio flex \
+            lib32stdc++6 libc6-dev-i386 libelf-dev libncurses-dev libssl-dev \
+            lz4 python3 zip unzip
+          ccache -M 3G
+          ccache -z
+          df -h
+          ccache -s
+
+      - name: Set up pinned KernelSU-Next overlay
+        if: matrix.edition == 'kernelsu-next'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ${{ runner.temp }}/KernelSU-Next
+          key: upa50-kernelsu-next-${{ hashFiles('kernelsu-next.lock') }}
+
+      - name: Apply pinned KernelSU-Next overlay
+        if: matrix.edition == 'kernelsu-next'
+        run: |
+          bash .github/scripts/setup-kernelsu-next.sh "$RUNNER_TEMP/KernelSU-Next"
+
+      - name: Build and validate package
+        env:
+          UPA50_TOOLCHAIN_DIR: ${{ steps.toolchain.outputs.toolchain_dir }}
+          UPA50_TOOLCHAIN_KIND: proton
+          UPA50_SKIP_TOOLCHAIN_FETCH: "1"
+          UPA50_USE_CCACHE: "1"
+          UPA50_EDITION: ${{ matrix.edition }}
+          UPA50_VERSION: "0.0.0"
+        run: |
+          set -o pipefail
+          bash ./build.sh --automated --device a50 --variant "${{ matrix.variant }}" \
+            --android "${{ matrix.android }}" 2>&1 | tee build.log
+          package="$(find out -maxdepth 1 -type f -name 'UPA50-*.zip' -print -quit)"
+          test -n "$package"
+          mkdir -p package-validation artifacts
+          cp "$package" package-validation/
+          python3 scripts/validate_release.py --release-dir package-validation \
+            --expected-packages 1 \
+            --expected-name "UPA50-2-${{ matrix.edition == 'standard' && 'STANDARD' || 'KERNELSU-NEXT' }}-${{ matrix.variant }}-A${{ matrix.android }}-v0.0.0.zip" \
+            --expected-edition "${{ matrix.edition }}"
+          cp "$package" artifacts/
+          unzip -p "$package" Image > artifacts/Image
+          unzip -p "$package" dtb.img > artifacts/dtb.img
+          cp .config vmlinux build.log BUILD_INFO.txt CHANGELOG.md artifacts/
+          {
+            printf 'Source commit: %s\n' "$(git rev-parse HEAD)"
+            printf 'Edition: %s\nVariant: %s\nAndroid: %s\n' \
+              "${{ matrix.edition }}" "${{ matrix.variant }}" "${{ matrix.android }}"
+            printf 'CI run: %s/%s/actions/runs/%s\n' \
+              "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
+          } >> artifacts/BUILD_INFO.txt
+          (cd artifacts && sha256sum *.zip Image dtb.img .config vmlinux build.log BUILD_INFO.txt CHANGELOG.md > SHA256SUMS.txt)
+          {
+            printf 'Package: %s\n' "$(basename "$package")"
+            printf 'Package size: %s bytes\n' "$(stat -c%s "$package")"
+            cat artifacts/SHA256SUMS.txt
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          ccache -s
+
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ matrix.edition }}-${{ matrix.variant }}-android-${{ matrix.android }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Create failure report
+        if: failure()
+        run: |
+          {
+            echo "UPA50 build failed."
+            echo "Edition: ${{ matrix.edition }}"
+            echo "Variant: ${{ matrix.variant }}"
+            echo "Android: ${{ matrix.android }}"
+            echo "Commit: $(git rev-parse HEAD)"
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            if [[ -f build.log ]]; then
+              echo
+              echo "Last build-log lines:"
+              tail -n 40 build.log
+            fi
+          } > failure-report.txt
+
+      - name: Upload failure report
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ matrix.edition }}-${{ matrix.variant }}-android-${{ matrix.android }}-failure
+          path: |
+            failure-report.txt
+            build.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  standard-purity:
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+      - name: Download Standard build
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: standard-oneui-android-12
+          path: standard-artifacts
+
+      - name: Check Standard configuration and binary purity
+        run: |
+          if grep -Eq '^(# )?CONFIG_(KSU|SUSFS|KERNELSU)[A-Z0-9_]*(=| is not set)' standard-artifacts/.config; then
+            echo "Standard config enables KernelSU, KernelSU-Next, or SuSFS"
+            exit 1
+          fi
+          if nm standard-artifacts/vmlinux | grep -Eiq '(^|[^[:alnum:]_])(ksu|kernelsu|susfs)([^[:alnum:]_]|$)'; then
+            echo "Standard vmlinux contains a KernelSU or SuSFS symbol"
+            exit 1
+          fi
+          if strings standard-artifacts/Image | grep -Eiq '(^|[^[:alnum:]_])(ksu|kernelsu|susfs)([^[:alnum:]_]|$)'; then
+            echo "Standard Image contains a KernelSU or SuSFS string"
+            exit 1
+          fi
+
+  kernelsu-next-validation:
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+      - name: Download KernelSU-Next build
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: kernelsu-next-oneui-android-12
+          path: kernelsu-next-artifacts
+
+      - name: Check KernelSU-Next edition configuration and pin
+        run: |
+          grep -qx 'CONFIG_KSU=y' kernelsu-next-artifacts/.config
+          grep -qx 'CONFIG_KPROBES=y' kernelsu-next-artifacts/.config
+          grep -qx 'CONFIG_EXT4_FS=y' kernelsu-next-artifacts/.config
+          if grep -Eq '^(# )?CONFIG_[A-Z0-9_]*SUSFS[A-Z0-9_]*(=| is not set)' \
+            kernelsu-next-artifacts/.config; then
+            echo "SuSFS configuration is not permitted"
+            exit 1
+          fi
+          if ! nm kernelsu-next-artifacts/vmlinux | grep -Eq '(^|[[:space:]])ksu_[[:alnum:]_]*$'; then
+            echo "KernelSU-Next is not present in the built vmlinux"
+            exit 1
+          fi
+          if nm kernelsu-next-artifacts/vmlinux | grep -Eiq '(^|[^[:alnum:]_])susfs([^[:alnum:]_]|$)'; then
+            echo "SuSFS symbol found in KernelSU-Next vmlinux"
+            exit 1
+          fi
+          if strings kernelsu-next-artifacts/Image | grep -Eiq '(^|[^[:alnum:]_])susfs([^[:alnum:]_]|$)'; then
+            echo "SuSFS string found in KernelSU-Next Image"
+            exit 1
+          fi
+          source kernelsu-next.lock
+          grep -Fqx "KernelSU-Next commit: $commit" kernelsu-next-artifacts/BUILD_INFO.txt

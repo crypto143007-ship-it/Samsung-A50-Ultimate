@@ -1,0 +1,96 @@
+diff --git a/kernel/allowlist.c b/kernel/allowlist.c
+--- a/kernel/allowlist.c
++++ b/kernel/allowlist.c
+@@ -1,0 +2 @@
++#include <linux/sched/task.h>
+@@ -427 +428 @@
+-	task_work_add(tsk, cb, TWA_RESUME);
++	task_work_add(tsk, cb, true);
+diff --git a/kernel/app_profile.c b/kernel/app_profile.c
+--- a/kernel/app_profile.c
++++ b/kernel/app_profile.c
+@@ -69,0 +70 @@
++	put_seccomp_filter(current);
+@@ -71 +72,0 @@
+-	atomic_set(&current->seccomp.filter_count, 0);
+diff --git a/kernel/sucompat.c b/kernel/sucompat.c
+--- a/kernel/sucompat.c
++++ b/kernel/sucompat.c
+@@ -5 +5,0 @@
+-#include <linux/pgtable.h>
+@@ -83 +82 @@
+-	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
++	ksu_strncpy_from_user_nofault_compat(path, *filename_user, sizeof(path));
+@@ -108 +107 @@
+-	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
++	ksu_strncpy_from_user_nofault_compat(path, *filename_user, sizeof(path));
+@@ -137 +136 @@
+-	ret = strncpy_from_user_nofault(path, fn, sizeof(path));
++	ret = ksu_strncpy_from_user_nofault_compat(path, fn, sizeof(path));
+@@ -140 +139 @@
+-		ret = strncpy_from_user_nofault(path, fn, sizeof(path));
++		ret = ksu_strncpy_from_user_nofault_compat(path, fn, sizeof(path));
+diff --git a/kernel/util.h b/kernel/util.h
+--- a/kernel/util.h
++++ b/kernel/util.h
+@@ -4 +4,13 @@
+ #include <linux/types.h>
++#include <linux/uaccess.h>
++
++static inline long ksu_strncpy_from_user_nofault_compat(char *dst,
++		const char __user *src, long count)
++{
++	long ret;
++
++	pagefault_disable();
++	ret = strncpy_from_user(dst, src, count);
++	pagefault_enable();
++	return ret;
++}
+diff --git a/kernel/syscall_hook_manager.c b/kernel/syscall_hook_manager.c
+--- a/kernel/syscall_hook_manager.c
++++ b/kernel/syscall_hook_manager.c
+@@ -258 +258 @@
+-	ret = strncpy_from_user_nofault(path, fn, sizeof(path));
++	ret = ksu_strncpy_from_user_nofault_compat(path, fn, sizeof(path));
+@@ -260 +260 @@
+-		ret = strncpy_from_user_nofault(path, fn, sizeof(path));
++		ret = ksu_strncpy_from_user_nofault_compat(path, fn, sizeof(path));
+diff --git a/kernel/pkg_observer.c b/kernel/pkg_observer.c
+--- a/kernel/pkg_observer.c
++++ b/kernel/pkg_observer.c
+@@ -24,3 +24,6 @@
+-static int ksu_handle_inode_event(struct fsnotify_mark *mark, u32 mask,
+-				  struct inode *inode, struct inode *dir,
+-				  const struct qstr *file_name, u32 cookie)
++static int ksu_handle_inode_event(struct fsnotify_group *group,
++		struct inode *inode, struct fsnotify_mark *inode_mark,
++		struct fsnotify_mark *vfsmount_mark, u32 mask,
++		const void *data, int data_type,
++		const unsigned char *file_name, u32 cookie,
++		struct fsnotify_iter_info *iter_info)
+@@ -32,2 +35 @@
+-	if (file_name->len == 13 &&
+-	    !memcmp(file_name->name, "packages.list", 13)) {
++	if (!strcmp((const char *)file_name, "packages.list")) {
+@@ -41 +43 @@
+-	.handle_inode_event = ksu_handle_inode_event,
++.handle_event = ksu_handle_inode_event,
+@@ -56 +58 @@
+-	if (fsnotify_add_inode_mark(m, inode, 0)) {
++	if (fsnotify_add_mark(m, inode, NULL, 0)) {
+diff --git a/kernel/kernel_umount.c b/kernel/kernel_umount.c
+--- a/kernel/kernel_umount.c
++++ b/kernel/kernel_umount.c
+@@ -146 +146 @@
+-	int err = task_work_add(current, &tw->cb, TWA_RESUME);
++	int err = task_work_add(current, &tw->cb, true);
+diff --git a/kernel/setuid_hook.c b/kernel/setuid_hook.c
+--- a/kernel/setuid_hook.c
++++ b/kernel/setuid_hook.c
+@@ -90 +90 @@
+-                force_sig(SIGKILL);
++                force_sig(SIGKILL, current);
+@@ -99 +99 @@
+-                force_sig(SIGKILL);
++                force_sig(SIGKILL, current);

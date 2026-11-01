@@ -1,0 +1,10 @@
+# Toolchain pins. The commit IDs are fixed; manifest and version values are
+# bootstrapped by toolchain-lock.yml on ubuntu-22.04 and must then be committed.
+proton.commit=32074ae4fc8e2269569fdff26a22da037388c3e3
+proton.manifest_sha256=81644b4737a76c7cfba014b7b49b346651f8d5d2f0200a54b567fcf3d63e8b9a
+proton.clang_version=Proton clang version 13.0.0 (https://github.com/llvm/llvm-project b4fd512c36ca344a3ff69350219e8b0a67e9472a)
+proton.ld_lld_version=LLD 13.0.0 (https://github.com/llvm/llvm-project b4fd512c36ca344a3ff69350219e8b0a67e9472a) (compatible with GNU linkers)
+aosp.commit=425c8149f17c8d9914bf690b4d5abe45a13fb993
+aosp.manifest_sha256=c594a53504f5f1a61c2fe09d2ad51f89f503e52378af72de5e5da7c05f0621aa
+aosp.clang_version=Android (10087095, +pgo, +bolt, +lto, -mlgo, based on r487747c) clang version 17.0.2 (https://android.googlesource.com/toolchain/llvm-project d9f89f4d16663d5012e5c09495f3b30ece3d2362)
+aosp.ld_lld_version=LLD 17.0.2 (compatible with GNU linkers)

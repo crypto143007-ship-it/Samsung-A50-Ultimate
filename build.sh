@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -o pipefail
 # =========================================
 #         _____              _
 #        |  ___| __ ___  ___| |__
@@ -34,7 +35,7 @@
 # [
 # Directories
 TOP="$(pwd)"
-TOOLCHAIN="$TOP/toolchain"
+TOOLCHAIN="${UPA50_TOOLCHAIN_DIR:-$TOP/toolchain}"
 OUT_DIR="$TOP/out"
 TMP_DIR="$OUT_DIR/tmp"
 DEVICE_DB_DIR="$TOP/Documentation/device-db"
@@ -44,6 +45,14 @@ SUB_CONFIG_DIR="$TOP/kernel/configs"
 # Toolchain options
 BUILD_PREF_COMPILER="clang"
 BUILD_PREF_COMPILER_VERSION="proton"
+if [[ "${UPA50_TOOLCHAIN_KIND:-}" == "aosp" ]]; then
+    BUILD_PREF_COMPILER_VERSION="clang"
+elif [[ "${UPA50_TOOLCHAIN_KIND:-}" == "proton" ]]; then
+    BUILD_PREF_COMPILER_VERSION="proton"
+fi
+if [[ "${UPA50_USE_CCACHE:-0}" == "1" ]]; then
+    BUILD_PREF_COMPILER="ccache clang"
+fi
 
 # Build variables - DO NOT CHANGE
 export ARCH="arm64"
@@ -61,10 +70,9 @@ BUILD_KERNEL_BRANCH="${GITHUB_REF##*/}"
 [[ $BUILD_KERNEL_BRANCH == *"android-"* ]] && BUILD_KERNEL_BRANCH="mainline"
 
 # Defaults
-BUILD_KERNEL_KSU=false
 BUILD_KERNEL_CI=false
 BUILD_KERNEL_DIRTY=false
-BUILD_KERNEL_PERMISSIVE=false
+BUILD_CONFIG_ONLY=false
 
 # Script commands
 script_echo() { echo "  $1"; }
@@ -87,7 +95,13 @@ VERIFY_TOOLCHAIN() {
     sleep 2
     script_echo " "
 
-    if [ -d "$TOOLCHAIN" ]; then
+    if [[ "${UPA50_SKIP_TOOLCHAIN_FETCH:-0}" == "1" ]]; then
+        if [[ ! -x "$TOOLCHAIN/bin/clang" ]]; then
+            script_echo "E: Verified CI toolchain is missing: $TOOLCHAIN/bin/clang"
+            return 1
+        fi
+        script_echo "I: Using CI-verified toolchain at $TOOLCHAIN"
+    elif [ -d "$TOOLCHAIN" ]; then
         script_echo "I: Toolchain found at repository root"
         cd "$TOOLCHAIN" || exit
         git pull
@@ -107,7 +121,7 @@ VERIFY_TOOLCHAIN() {
     fi
 
     export PATH="${TOOLCHAIN}/bin:$PATH"
-	export LD_LIBRARY_PATH="${TOOLCHAIN}/lib:$LD_LIBRARY_PATH"
+	export LD_LIBRARY_PATH="${TOOLCHAIN}/lib:${LD_LIBRARY_PATH:-}"
 
     # Proton Clang 13
     export CROSS_COMPILE="aarch64-linux-gnu-"
@@ -137,22 +151,10 @@ SET_LOCALVERSION() {
     esac
 }
 SET_ZIPNAME() {
-    local MINT_TYPE MINT_SELINUX ONEUI_VERSION ROOT_SOLUTION
+    local MINT_TYPE MINT_SELINUX ONEUI_VERSION
     MINT_VERSION="$BUILD_DATE"
     MINT_TYPE="UB"
     MINT_SELINUX="Enforcing"
-
-    if $BUILD_KERNEL_CI; then
-        if [[ $BUILD_KERNEL_BRANCH == mainline ]]; then
-            MINT_VERSION="$KERNEL_BUILD_VERSION"
-        else
-            MINT_VERSION="$GITHUB_RUN_NUMBER"
-        fi
-        MINT_TYPE="CI"
-    fi
-
-    $BUILD_KERNEL_KSU && ROOT_SOLUTION="-KSU"
-    $BUILD_KERNEL_PERMISSIVE && MINT_SELINUX="Permissive"
 
     case "$BUILD_VARIANT" in
     aosp)
@@ -164,10 +166,29 @@ SET_ZIPNAME() {
         ;;
     esac
 
+    if [[ -n "${UPA50_EDITION:-}" ]]; then
+        UPA50_VERSION="${UPA50_VERSION:-0.0.0}"
+        [[ "$UPA50_EDITION" == "standard" || "$UPA50_EDITION" == "kernelsu-next" ]] ||
+            { script_echo "E: Invalid UPA50 edition: $UPA50_EDITION"; return 1; }
+        [[ "$UPA50_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] ||
+            { script_echo "E: Invalid UPA50 version: $UPA50_VERSION"; return 1; }
+        FILE_NAME="UPA50-2-${UPA50_EDITION^^}-${BUILD_VARIANT}-A${BUILD_ANDROID_PLATFORM}-v${UPA50_VERSION}.zip"
+        return
+    fi
+
+    if $BUILD_KERNEL_CI; then
+        if [[ $BUILD_KERNEL_BRANCH == mainline ]]; then
+            MINT_VERSION="$KERNEL_BUILD_VERSION"
+        else
+            MINT_VERSION="$GITHUB_RUN_NUMBER"
+        fi
+        MINT_TYPE="CI"
+    fi
+
     if [[ $BUILD_KERNEL_BRANCH == mainline ]]; then
-        FILE_NAME="Mint-${MINT_VERSION}.A${BUILD_ANDROID_PLATFORM}.${MINT_VARIANT}${ONEUI_VERSION}${ROOT_SOLUTION}_${BUILD_DEVICE_NAME^}.zip"
+        FILE_NAME="Mint-${MINT_VERSION}.A${BUILD_ANDROID_PLATFORM}.${MINT_VARIANT}${ONEUI_VERSION}_${BUILD_DEVICE_NAME^}.zip"
     else
-        FILE_NAME="MintBeta-${MINT_VERSION}.A${BUILD_ANDROID_PLATFORM}.${MINT_VARIANT}${ONEUI_VERSION}-${MINT_SELINUX}${ROOT_SOLUTION}_${BUILD_DEVICE_NAME^}.${MINT_TYPE}.zip"
+        FILE_NAME="MintBeta-${MINT_VERSION}.A${BUILD_ANDROID_PLATFORM}.${MINT_VARIANT}${ONEUI_VERSION}-${MINT_SELINUX}_${BUILD_DEVICE_NAME^}.${MINT_TYPE}.zip"
     fi
 }
 
@@ -177,6 +198,21 @@ BUILD_KERNEL() {
 
     sleep 3
     script_echo " "
+
+    if $BUILD_CONFIG_ONLY; then
+        case "$BUILD_PREF_COMPILER_VERSION" in
+        proton)
+            make -C "$TOP" CC="$BUILD_PREF_COMPILER" HOSTCC=clang HOSTCXX=clang++ AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip "$BUILD_DEVICE_TMP_CONFIG" LOCALVERSION="$LOCALVERSION" 2>&1 | sed 's/^/     /'
+            ;;
+        clang)
+            make -C "$TOP" CC="$BUILD_PREF_COMPILER" LLVM=1 "$BUILD_DEVICE_TMP_CONFIG" LOCALVERSION="$LOCALVERSION" 2>&1 | sed 's/^/     /'
+            ;;
+        *)
+            make -C "$TOP" CC="$BUILD_PREF_COMPILER" "$BUILD_DEVICE_TMP_CONFIG" LOCALVERSION="$LOCALVERSION" 2>&1 | sed 's/^/     /'
+            ;;
+        esac
+        return
+    fi
 
     case "$BUILD_PREF_COMPILER_VERSION" in
     proton)
@@ -233,6 +269,8 @@ BUILD_RAMDISK() {
     fi
 }
 BUILD_IMAGE() {
+    local SELINUX_CMDLINE="androidboot.selinux=enforcing"
+
     script_echo " "
 	script_echo "I: Building kernel image..."
 	script_echo "    Header/Page size: $DEVICE_KERNEL_HEADER/$DEVICE_KERNEL_PAGESIZE"
@@ -243,7 +281,7 @@ BUILD_IMAGE() {
 
     "$TOP/tools/make/bin/mkbootimg" \
         --kernel "$TOP/arch/arm64/boot/Image" --ramdisk "$TOP/tools/make/$RAMDISK" \
-        --cmdline "androidboot.selinux=permissive loop.max_part=7" --board "$DEVICE_KERNEL_BOARD" \
+        --cmdline "$SELINUX_CMDLINE loop.max_part=7" --board "$DEVICE_KERNEL_BOARD" \
         --base "$DEVICE_KERNEL_BASE" --pagesize "$DEVICE_KERNEL_PAGESIZE" \
         --kernel_offset "$DEVICE_KERNEL_OFFSET" --ramdisk_offset "$DEVICE_RAMDISK_OFFSET" \
         --second_offset "$DEVICE_SECOND_OFFSET" --tags_offset "$DEVICE_TAGS_OFFSET" \
@@ -286,9 +324,15 @@ BUILD_PACKAGE() {
     {
         echo "ro.mint.build.date=$BUILD_DATE"
         echo "ro.mint.build.branch=$BUILD_KERNEL_BRANCH"
-        echo "ro.mint.build.ksu=$BUILD_KERNEL_KSU"
+        if [[ "${UPA50_EDITION:-standard}" == "kernelsu-next" ]]; then
+            echo "ro.mint.build.ksu=true"
+        else
+            echo "ro.mint.build.ksu=false"
+        fi
         echo "ro.mint.droid.device=${BUILD_DEVICE_NAME^}"
         echo "ro.mint.droid.variant=$MINT_VARIANT"
+        [[ -n "${UPA50_EDITION:-}" ]] && echo "ro.upa50.edition=$UPA50_EDITION"
+        [[ -n "${UPA50_EDITION:-}" ]] && echo "ro.upa50.generation=2"
 
         if [[ $BUILD_KERNEL_BRANCH == mainline ]]; then
             echo "ro.mint.droid.beta=false"
@@ -321,10 +365,9 @@ show_usage() {
 	script_echo "-a, --android <version>   Set Android version to build the kernel for. (Default: 11)"
 	script_echo "-v, --variant <variant>   Set build variant to build the kernel for. Required."
 	script_echo " "
-	script_echo "-k, --kernelsu            Pre-root the kernel with KernelSU."
-	script_echo "                          Not available for 'recovery' variant."
 	script_echo "-n, --no-clean            Do not clean up before build."
-	script_echo "-p, --permissive          Build kernel with SELinux fully permissive. NOT RECOMMENDED!"
+	script_echo " "
+	script_echo "    --config-only          Generate the merged .config without compiling."
 	script_echo " "
 	script_echo "-h, --help                Show this message."
 	script_echo " "
@@ -374,14 +417,11 @@ while [ $# -gt 0 ]; do
     -c|--automated)
         BUILD_KERNEL_CI=true
         shift ;;
-    -k|--kernelsu)
-        BUILD_KERNEL_KSU=true
-        shift ;;
     -n|--no-clean)
         BUILD_KERNEL_DIRTY=true
         shift ;;
-    -p|--permissive)
-        BUILD_KERNEL_PERMISSIVE=true
+    --config-only)
+        BUILD_CONFIG_ONLY=true
         shift ;;
     -h|--help)
         show_usage ;;
@@ -439,17 +479,14 @@ script_echo "I: Selected device:    $BUILD_DEVICE_NAME"
 script_echo "   Selected variant:   $MINT_VARIANT"
 script_echo "   Kernel version:     $VERSION.$PATCHLEVEL.$SUBLEVEL"
 script_echo "   Android version:    $BUILD_ANDROID_PLATFORM"
-script_echo "   KernelSU-enabled:   $BUILD_KERNEL_KSU"
 script_echo "   Output file:        $OUT_DIR/$FILE_NAME"
 
 # Setup build environment
 rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
-VERIFY_TOOLCHAIN
+VERIFY_TOOLCHAIN || exit 1
 VERIFY_DEFCONFIG
-
-git submodule update --init "$TOP/KernelSU"
 
 if $BUILD_KERNEL_CI; then
 	export KBUILD_BUILD_USER="Clembot"
@@ -473,29 +510,23 @@ fi
 merge_config "partial-deknox-$BUILD_ANDROID_PLATFORM"
 merge_config "mali-$BUILD_ANDROID_PLATFORM"
 merge_config "variant_$BUILD_VARIANT"
-
-if $BUILD_KERNEL_KSU; then
-    if [[ $BUILD_VARIANT == recovery ]]; then
-        script_echo "I: Recovery variant selected."
-        script_echo "   KernelSU is not an available option to allow recovery to boot."
-        merge_config root-none
-        sleep 3
-    else
-        merge_config root-kernelsu
+if [[ "${UPA50_EDITION:-standard}" == "kernelsu-next" ]]; then
+    if [[ ! -f "$TOP/drivers/kernelsu/Kconfig" ]]; then
+        script_echo "E: KernelSU-Next overlay is missing from this edition."
+        exit 1
     fi
-else
-    merge_config root-none
-fi
-
-if $BUILD_KERNEL_PERMISSIVE; then
-	script_echo "WARNING! You're building this kernel in permissive mode!"
-	script_echo "         This is insecure and may make your device vulnerable."
-	script_echo "         This kernel has NO RESPONSIBILITY on whatever happens next."
-	merge_config selinux-permissive
+    echo "CONFIG_KPROBES=y" >> "$BUILD_CONFIG_DIR/$BUILD_DEVICE_TMP_CONFIG"
 fi
 
 # Build Mint
-BUILD_KERNEL
+BUILD_KERNEL || exit 1
+if $BUILD_CONFIG_ONLY; then
+    CONFIG_FILE="$OUT_DIR/UPA50-${BUILD_VARIANT}-A${BUILD_ANDROID_PLATFORM}.config"
+    cp "$TOP/.config" "$CONFIG_FILE"
+    script_echo "I: Generated config: $CONFIG_FILE"
+    rm -f "$BUILD_CONFIG_DIR/$BUILD_DEVICE_TMP_CONFIG"
+    exit 0
+fi
 if [[ $BUILD_VARIANT == recovery ]]; then
 	script_echo " "
 	script_echo "I: Exporting kernel image..."
