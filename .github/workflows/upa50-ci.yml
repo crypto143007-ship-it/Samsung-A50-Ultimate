@@ -24,6 +24,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          submodules: true
           fetch-depth: 2
 
       - name: Check changed source and build-input line endings
@@ -101,6 +102,8 @@ jobs:
 
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          submodules: true
 
       - name: Cache pinned Proton source
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
@@ -159,6 +162,8 @@ jobs:
 
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          submodules: true
 
       - name: Cache pinned Proton source
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830

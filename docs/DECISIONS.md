@@ -49,7 +49,14 @@
   workflow omitted `UPA50_EDITION` and `UPA50_VERSION`, so `build.sh` emitted
   a legacy MintBeta filename and the expected UPA50 package could not be
   validated; no artifact was uploaded. The follow-up sets those environment
-  values and avoids initializing the legacy KernelSU submodule for Standard.
+  values.
+- **Standard config dependency:** `[VERIFIED-STATIC]` In [run
+  41278030173](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41278030173),
+  config generation failed with `drivers/Kconfig: can't open file
+  "drivers/kernelsu/Kconfig"` after submodule checkout was disabled. The
+  source tree needs the Kconfig input even for Standard, where the generated
+  config disables KSU. The submodule checkout is restored; package purity
+  remains gated on config and binary symbol scans.
 - **Legacy line endings:** `[VERIFIED-STATIC]` The first full-tree CI scan
   found CRLF in 56 pre-existing C/header/Makefile files. No kernel source
   content was changed. The required global auto-text LF rule and explicit
