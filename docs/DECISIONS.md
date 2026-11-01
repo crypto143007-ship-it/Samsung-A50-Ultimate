@@ -119,9 +119,24 @@ not been retrieved locally.
 [VERIFIED-STATIC] The pinned KernelSU-Next overlay is implemented in
 `.github/scripts/setup-kernelsu-next.sh` with source identity recorded in
 `kernelsu-next.lock`. It intentionally avoids the upstream `kernel/setup.sh`,
-which fetches a moving branch. The tag also contains separate SuSFS LKM files;
-the pinned in-tree `kernel/Kbuild` does not link them, and CI checks both config
-and compiled output for SuSFS. Its independent build/purity gate is pending a
-successful Actions run.
+which fetches a moving branch.
+
+- **KernelSU-Next compatibility decision:** `[VERIFIED-BUILD]` The initial
+  v3.4.2 integration in [run
+  41284747123](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41284747123)
+  failed while compiling `drivers/kernelsu/core/init.c`: the pinned source
+  references `syscall_fn_t`, which the Linux 4.14.194 ARM64 headers do not
+  define. Static inspection also confirms that v3.4.2 expects the newer
+  regs-based syscall-table ABI (`kernel/hook/syscall_hook.h` and
+  `kernel/include/arch.h`), while this kernel's syscall table contains direct
+  syscall entries (`arch/arm64/kernel/sys.c`). A type-only shim would leave an
+  incompatible call convention, so it was not applied.
+- **Replacement pin:** `[VERIFIED-STATIC]` Use official KernelSU-Next v3.0.0
+  (`be141d05d03f37f67ae1505dbbe56cadbfcad130`) as the candidate: its
+  `kernel/syscall_hook_manager.c` registers `sys_enter` tracepoints, the A50
+  defconfigs enable `CONFIG_HAVE_SYSCALL_TRACEPOINTS`, and its Kconfig requires
+  KPROBES. Its release tree contains no `susfs` paths. The actual 4.14 build
+  is pending; this static compatibility evidence is not runtime/device
+  validation.
 
 No physical-device test has been performed.

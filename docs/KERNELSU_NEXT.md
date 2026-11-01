@@ -2,23 +2,23 @@
 
 [VERIFIED-STATIC] The KernelSU-Next edition is pinned to the official
 [`KernelSU-Next/KernelSU-Next`](https://github.com/KernelSU-Next/KernelSU-Next)
-`v3.4.2` release at commit `4c706b5938665866ebe16944a481a7b91e3396af`.
+`v3.0.0` release at commit `be141d05d03f37f67ae1505dbbe56cadbfcad130`.
 The tag resolves to that commit; `tiann/KernelSU-Next` is not the correct
 repository path.
 
-[VERIFIED-STATIC] At the pinned source, `kernel/Kconfig` requires
-`KPROBES && EXT4_FS`. Both A50 defconfigs unset `CONFIG_KPROBES` and enable
-`CONFIG_EXT4_FS`. The upstream setup script follows a moving repository, so
-CI fetches the locked commit and `.github/scripts/setup-kernelsu-next.sh`
-verifies it before applying a temporary driver Kconfig/Makefile overlay.
-`build.sh` enables KPROBES only for the KernelSU-Next edition.
+[VERIFIED-BUILD] The initial v3.4.2 CI build failed because that release
+expects `syscall_fn_t` and a regs-based ARM64 syscall-table ABI absent from the
+4.14.194 baseline. A typedef-only workaround would compile against an
+incompatible calling convention, so it was rejected.
 
-[VERIFIED-STATIC] This upstream tag also contains a separate `kernel/susfs/`
-module. Its pinned in-tree `kernel/Kbuild` does not reference that module.
-CI checks the KSU-edition configuration and compiled artifacts to keep SuSFS
-disabled and absent from the kernel image.
+[VERIFIED-STATIC] v3.0.0 uses syscall tracepoints; ARM64 selects
+`HAVE_SYSCALL_TRACEPOINTS`, and both A50 defconfigs enable it. Its Kconfig
+requires KPROBES, which `build.sh` enables only for this edition. The v3.0.0
+tree has no SuSFS paths. CI fetches the locked tag and
+`.github/scripts/setup-kernelsu-next.sh` verifies the commit before applying
+the temporary driver Kconfig/Makefile overlay.
 
 [VERIFIED-BUILD] Standard configuration and binary purity passed in [UPA50 CI
 41280660290](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41280660290).
-[PROPOSED] The separate KernelSU-Next build and configuration checks have not
-yet run. SuSFS remains excluded from both editions.
+[PROPOSED] The v3.0.0 edition build and configuration checks are pending CI.
+No KernelSU-Next build or device functionality is yet verified.

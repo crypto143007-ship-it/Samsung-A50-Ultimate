@@ -36,7 +36,8 @@ if [[ -f "$source_dir/.git/shallow" ]]; then
         "refs/tags/$tag"
 fi
 
-if [[ ! -f "$source_dir/kernel/Kconfig" || ! -f "$source_dir/kernel/Kbuild" ]]; then
+if [[ ! -f "$source_dir/kernel/Kconfig" || \
+    ( ! -f "$source_dir/kernel/Kbuild" && ! -f "$source_dir/kernel/Makefile" ) ]]; then
     echo "Pinned KernelSU-Next kernel sources are incomplete" >&2
     exit 1
 fi
