@@ -2,20 +2,22 @@
 
 ## NEXT ACTIONS
 
-- **Current gate:** Toolchain manifest bootstrap; baseline Standard build is
-  not started.
+- **Current gate:** Verify the committed toolchain lock, then run the baseline
+  Standard configuration and build.
 - **Build policy:** All toolchain fetches, configuration, builds, validation,
   packaging, and release work run in GitHub Actions only.
-- **Last good commit:** `79de15d39` (repository cleanup; no build evidence).
+- **Last good commit:** `cd122441f` (lock workflow succeeded; no kernel build).
 - **Last green run:** None.
 - **Last failing run:** [Toolchain lock 41274212163](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41274212163),
   `Record pinned compiler manifests`: `Permission denied` because the new
   shell script was committed without its executable bit. Corrected locally;
   no toolchain fetch or build ran.
-- **Exact next commands:** Push the executable-bit fix, then run
-  `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow toolchain-lock.yml --limit 5`,
-  inspect failures with `gh run view <id> --log-failed`, and download the
-  generated small lock artifact with `gh run download <id>`.
+- **Last green run:** [Toolchain lock 41274569055](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41274569055);
+  pinned toolchains and manifests recorded, no kernel compilation.
+- **Exact next commands:** Push the committed lock values, check the verify
+  run with `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow toolchain-lock.yml --limit 5`,
+  then inspect the UPA50 CI result with `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow upa50-ci.yml --limit 5`
+  and `gh run view <id> --log-failed`.
 
 ## Engineering gates
 

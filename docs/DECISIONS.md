@@ -33,6 +33,12 @@
   failed before fetching either toolchain because `prepare_toolchain.sh` was
   not executable in Git. The script mode is corrected; no compiler hash or
   build result was produced.
+- **Toolchain record:** `[VERIFIED-STATIC]` CI run
+  [41274569055](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41274569055)
+  fetched both exact commits, generated directory manifests, and recorded
+  Proton Clang 13.0.0 and AOSP Clang 17.0.2. The hashes and first-line version
+  strings are stored in `toolchain.lock`; this verifies provenance, not kernel
+  build compatibility.
 - **Editions and safety:** Standard excludes KernelSU/KernelSU-Next/SuSFS;
   KernelSU-Next is limited to the separate edition and pinned to official
   `v3.4.2` commit `4c706b5938665866ebe16944a481a7b91e3396af`. SuSFS is excluded.

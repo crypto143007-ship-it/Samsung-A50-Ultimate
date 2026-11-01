@@ -36,15 +36,27 @@ jobs:
           path: ${{ runner.temp }}/upa50-toolchain-sources/aosp
           key: upa50-aosp-425c8149f17c8d9914bf690b4d5abe45a13fb993
 
-      - name: Record pinned compiler manifests
+      - name: Record or verify pinned compiler manifests
+        id: lock
         run: |
-          : > toolchain.lock.generated
+          if grep -q '=RECORD_IN_CI$' toolchain.lock; then
+            mode=record
+            : > toolchain.lock.generated
+          else
+            mode=verify
+          fi
           : > BUILD_INFO.txt
-          ./scripts/prepare_toolchain.sh record proton
-          ./scripts/prepare_toolchain.sh record aosp
-          cat toolchain.lock.generated >> "$GITHUB_STEP_SUMMARY"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          ./scripts/prepare_toolchain.sh "$mode" proton
+          ./scripts/prepare_toolchain.sh "$mode" aosp
+          if [[ "$mode" == record ]]; then
+            cat toolchain.lock.generated >> "$GITHUB_STEP_SUMMARY"
+          else
+            cat BUILD_INFO.txt >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload generated lock values
+        if: steps.lock.outputs.mode == 'record'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: toolchain-lock-generated
