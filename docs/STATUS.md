@@ -7,9 +7,13 @@
 - **Build policy:** All toolchain fetches, configuration, builds, validation,
   packaging, and release work run in GitHub Actions only.
 - **Last good commit:** `79de15d39` (repository cleanup; no build evidence).
-- **Last green/failing CI run:** None; no UPA50 Actions workflow has run.
-- **Exact next commands:** Push the toolchain-lock workflow, then use
-  `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --limit 5`,
+- **Last green run:** None.
+- **Last failing run:** [Toolchain lock 41274212163](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41274212163),
+  `Record pinned compiler manifests`: `Permission denied` because the new
+  shell script was committed without its executable bit. Corrected locally;
+  no toolchain fetch or build ran.
+- **Exact next commands:** Push the executable-bit fix, then run
+  `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow toolchain-lock.yml --limit 5`,
   inspect failures with `gh run view <id> --log-failed`, and download the
   generated small lock artifact with `gh run download <id>`.
 

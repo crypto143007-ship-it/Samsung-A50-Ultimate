@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -o pipefail
 # =========================================
 #         _____              _
 #        |  ___| __ ___  ___| |__
@@ -49,6 +50,9 @@ if [[ "${UPA50_TOOLCHAIN_KIND:-}" == "aosp" ]]; then
 elif [[ "${UPA50_TOOLCHAIN_KIND:-}" == "proton" ]]; then
     BUILD_PREF_COMPILER_VERSION="proton"
 fi
+if [[ "${UPA50_USE_CCACHE:-0}" == "1" ]]; then
+    BUILD_PREF_COMPILER="ccache clang"
+fi
 
 # Build variables - DO NOT CHANGE
 export ARCH="arm64"
@@ -70,6 +74,7 @@ BUILD_KERNEL_KSU=false
 BUILD_KERNEL_CI=false
 BUILD_KERNEL_DIRTY=false
 BUILD_KERNEL_PERMISSIVE=false
+BUILD_CONFIG_ONLY=false
 
 # Script commands
 script_echo() { echo "  $1"; }
@@ -189,6 +194,21 @@ BUILD_KERNEL() {
     sleep 3
     script_echo " "
 
+    if $BUILD_CONFIG_ONLY; then
+        case "$BUILD_PREF_COMPILER_VERSION" in
+        proton)
+            make -C "$TOP" CC="$BUILD_PREF_COMPILER" HOSTCC=clang HOSTCXX=clang++ AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip "$BUILD_DEVICE_TMP_CONFIG" LOCALVERSION="$LOCALVERSION" 2>&1 | sed 's/^/     /'
+            ;;
+        clang)
+            make -C "$TOP" CC="$BUILD_PREF_COMPILER" LLVM=1 "$BUILD_DEVICE_TMP_CONFIG" LOCALVERSION="$LOCALVERSION" 2>&1 | sed 's/^/     /'
+            ;;
+        *)
+            make -C "$TOP" CC="$BUILD_PREF_COMPILER" "$BUILD_DEVICE_TMP_CONFIG" LOCALVERSION="$LOCALVERSION" 2>&1 | sed 's/^/     /'
+            ;;
+        esac
+        return
+    fi
+
     case "$BUILD_PREF_COMPILER_VERSION" in
     proton)
         make -C "$TOP" CC="$BUILD_PREF_COMPILER" HOSTCC=clang HOSTCXX=clang++ AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip "$BUILD_DEVICE_TMP_CONFIG" LOCALVERSION="$LOCALVERSION" 2>&1 | sed 's/^/     /'
@@ -254,7 +274,7 @@ BUILD_IMAGE() {
 
     "$TOP/tools/make/bin/mkbootimg" \
         --kernel "$TOP/arch/arm64/boot/Image" --ramdisk "$TOP/tools/make/$RAMDISK" \
-        --cmdline "androidboot.selinux=permissive loop.max_part=7" --board "$DEVICE_KERNEL_BOARD" \
+        --cmdline "androidboot.selinux=enforcing loop.max_part=7" --board "$DEVICE_KERNEL_BOARD" \
         --base "$DEVICE_KERNEL_BASE" --pagesize "$DEVICE_KERNEL_PAGESIZE" \
         --kernel_offset "$DEVICE_KERNEL_OFFSET" --ramdisk_offset "$DEVICE_RAMDISK_OFFSET" \
         --second_offset "$DEVICE_SECOND_OFFSET" --tags_offset "$DEVICE_TAGS_OFFSET" \
@@ -394,6 +414,9 @@ while [ $# -gt 0 ]; do
     -p|--permissive)
         BUILD_KERNEL_PERMISSIVE=true
         shift ;;
+    --config-only)
+        BUILD_CONFIG_ONLY=true
+        shift ;;
     -h|--help)
         show_usage ;;
     *)
@@ -506,7 +529,14 @@ if $BUILD_KERNEL_PERMISSIVE; then
 fi
 
 # Build Mint
-BUILD_KERNEL
+BUILD_KERNEL || exit 1
+if $BUILD_CONFIG_ONLY; then
+    CONFIG_FILE="$OUT_DIR/UPA50-${BUILD_VARIANT}-A${BUILD_ANDROID_PLATFORM}.config"
+    cp "$TOP/.config" "$CONFIG_FILE"
+    script_echo "I: Generated config: $CONFIG_FILE"
+    rm -f "$BUILD_CONFIG_DIR/$BUILD_DEVICE_TMP_CONFIG"
+    exit 0
+fi
 if [[ $BUILD_VARIANT == recovery ]]; then
 	script_echo " "
 	script_echo "I: Exporting kernel image..."
