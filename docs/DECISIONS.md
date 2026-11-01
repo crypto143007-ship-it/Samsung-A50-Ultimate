@@ -72,16 +72,14 @@
   package because `mint.prop` omitted the required
   `ro.mint.build.ksu=false` marker; no artifact was uploaded. Keep this
   manifest metadata for Standard without restoring any KSU code or config.
-- **KernelSU-Next integration audit:** `[VERIFIED-STATIC]` The pin is from
-  `https://github.com/KernelSU-Next/KernelSU-Next` at `v3.4.2`,
-  `4c706b5938665866ebe16944a481a7b91e3396af`; the tag resolves directly to
-  that commit. The provided `tiann/KernelSU-Next` repository path does not
-  resolve, so use the verified canonical repository. At the pinned source,
-  `kernel/Kconfig` requires `KPROBES && EXT4_FS`; both A50 defconfigs have
-  `CONFIG_KPROBES` unset and `CONFIG_EXT4_FS=y`. The upstream `kernel/setup.sh`
-  clones/pulls the moving repository, so UPA50 will instead use a CI-only
-  overlay pinned to the verified commit and enable KPROBES only for the
-  KernelSU-Next edition.
+- **KernelSU-Next integration audit:** `[VERIFIED-STATIC]` The selected source
+  is from `https://github.com/KernelSU-Next/KernelSU-Next` at `v3.0.0`,
+  `be141d05d03f37f67ae1505dbbe56cadbfcad130`; the tag resolves to that commit.
+  The earlier v3.4.2 pin was rejected after its build exposed an incompatible
+  syscall-table ABI. At v3.0.0, `kernel/Kconfig` requires
+  `KPROBES && EXT4_FS`; both A50 defconfigs have `CONFIG_KPROBES` unset and
+  `CONFIG_EXT4_FS=y`. The CI-only overlay verifies the exact commit and
+  enables KPROBES only for the KernelSU-Next edition.
 - **Legacy line endings:** `[VERIFIED-STATIC]` The first full-tree CI scan
   found CRLF in 56 pre-existing C/header/Makefile files. No kernel source
   content was changed. The required global auto-text LF rule and explicit
@@ -97,10 +95,10 @@
   trailing whitespace. Those extra patterns were removed; only the required
   global and shell rules remain, avoiding a mass kernel-source diff.
 - **Editions and safety:** Standard excludes KernelSU/KernelSU-Next/SuSFS;
-  KernelSU-Next is limited to the separate edition and pinned to official
-  `v3.4.2` commit `4c706b5938665866ebe16944a481a7b91e3396af`. SuSFS is excluded.
-  Exactly three profiles are planned; thermal, charging, and battery
-  protections remain untouched.
+  KernelSU-Next is limited to the separate edition and currently pinned to
+  official `v3.0.0` commit `be141d05d03f37f67ae1505dbbe56cadbfcad130`.
+  SuSFS is excluded. Exactly three profiles are planned; thermal, charging,
+  and battery protections remain untouched.
 - **Inherited workflows:** The former development, Galaxy A50, and KernelSU
   workflows were reduced to manual informational stubs in commit
   `8e3c1a9567b77f0932d91b3304cdcbe38adfb9a8`; they will be removed as the
@@ -138,5 +136,17 @@ which fetches a moving branch.
   KPROBES. Its release tree contains no `susfs` paths. The actual 4.14 build
   is pending; this static compatibility evidence is not runtime/device
   validation.
+- **Linux 4.14 allowlist compatibility:** `[VERIFIED-BUILD]` The v3.0.0 build
+  in [run
+  41286220636](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41286220636)
+  reached `drivers/kernelsu/allowlist.c` and failed because the source passes
+  the newer `TWA_RESUME` enum to `task_work_add` and lacks the header declaring
+  `put_task_struct`. In the fork's 4.14 headers,
+  `task_work_add(..., bool notify)` explicitly maps `true` to
+  `set_notify_resume(task)`, and `put_task_struct` is declared in
+  `include/linux/sched/task.h` (`origin/android-14.0`). A focused CI overlay
+  patch now adds that include and passes `true`; this is behaviorally
+  equivalent to the required resume notification on the baseline API, but the
+  compatibility fix awaits a successful rebuild.
 
 No physical-device test has been performed.

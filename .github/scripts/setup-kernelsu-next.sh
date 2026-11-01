@@ -41,6 +41,15 @@ if [[ ! -f "$source_dir/kernel/Kconfig" || \
     echo "Pinned KernelSU-Next kernel sources are incomplete" >&2
     exit 1
 fi
+
+compatibility_patch="$(realpath .github/kernelsu-next/linux-4.14-task-work.diff)"
+if git -C "$source_dir" apply --unidiff-zero --reverse --check "$compatibility_patch" >/dev/null 2>&1; then
+    echo "Linux 4.14 task-work compatibility patch is already applied"
+else
+    git -C "$source_dir" apply --unidiff-zero --check "$compatibility_patch"
+    git -C "$source_dir" apply --unidiff-zero "$compatibility_patch"
+fi
+
 if [[ -e drivers/kernelsu || -L drivers/kernelsu ]]; then
     echo "drivers/kernelsu already exists; refusing to replace it" >&2
     exit 1
@@ -57,4 +66,5 @@ fi
 {
     printf 'KernelSU-Next tag: %s\n' "$tag"
     printf 'KernelSU-Next commit: %s\n' "$commit"
+    printf 'KernelSU-Next compatibility patch: linux-4.14-task-work.diff\n'
 } >> BUILD_INFO.txt

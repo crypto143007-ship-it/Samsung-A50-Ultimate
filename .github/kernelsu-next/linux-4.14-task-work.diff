@@ -1,0 +1,8 @@
+diff --git a/kernel/allowlist.c b/kernel/allowlist.c
+--- a/kernel/allowlist.c
++++ b/kernel/allowlist.c
+@@ -1,0 +2 @@
++#include <linux/sched/task.h>
+@@ -427 +428 @@
+-	task_work_add(tsk, cb, TWA_RESUME);
++	task_work_add(tsk, cb, true);

@@ -18,7 +18,13 @@ tree has no SuSFS paths. CI fetches the locked tag and
 `.github/scripts/setup-kernelsu-next.sh` verifies the commit before applying
 the temporary driver Kconfig/Makefile overlay.
 
-[VERIFIED-BUILD] Standard configuration and binary purity passed in [UPA50 CI
-41280660290](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41280660290).
-[PROPOSED] The v3.0.0 edition build and configuration checks are pending CI.
-No KernelSU-Next build or device functionality is yet verified.
+[VERIFIED-BUILD] The Standard build passed in [UPA50 CI
+41286220636](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41286220636).
+The KernelSU-Next v3.0.0 build reached `drivers/kernelsu/allowlist.c` but failed
+on the newer `TWA_RESUME` argument and missing `put_task_struct` declaration,
+which are not present in the Linux 4.14.194 APIs as used by this source.
+
+[PROPOSED] A narrow Linux 4.14 compatibility patch now includes
+`linux/sched/task.h` and maps `TWA_RESUME` to the baseline `task_work_add`
+notification boolean (`true`). It is not build-verified yet. No
+KernelSU-Next build or device functionality is verified.

@@ -2,23 +2,27 @@
 
 ## NEXT ACTIONS
 
-- **Current gate:** Build and validate the official KernelSU-Next v3.0.0
-  candidate after v3.4.2 proved incompatible with the baseline syscall ABI.
-  Keep Standard and both compiled images free of SuSFS.
+- **Current gate:** Rebuild the official KernelSU-Next v3.0.0 edition with the
+  Linux 4.14 task-work compatibility patch. Keep Standard and both compiled
+  images free of SuSFS.
 - **Build policy:** All toolchain fetches, configuration, builds, validation,
   packaging, and release work run in GitHub Actions only.
-- **Last good Standard commit:** `0930746de053632fd2f1c2c664bdb39e3adb61f1`.
-- **Last Standard-passing run:** [UPA50 CI 41284747123](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41284747123)
-  passed static checks, both edition configs, Standard Proton Clang 13.0.0
-  compilation/package validation, and Standard purity. The KSU v3.4.2 build in
-  that run failed at `syscall_fn_t` in `drivers/kernelsu/core/init.c`.
-- **Last artifact:** `standard-oneui-android-12` (58,777,341-byte Actions
-  artifact bundle; uploaded bundle digest
-  `066db25cd3ebda32d473e3088d9b9d49793ed9d6b992ca275ef3895a0df21eb3`).
-  The included ZIP's individual size and checksum were not printed in this run.
-- **Exact next commands:** Commit and push the v3.0.0 compatibility pin, then inspect
-  `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow upa50-ci.yml --limit 5`
-  and review any failure with `gh run view <id> --log-failed`.
+- **Last attempted commit:** `ae0a5afea3287da686f36644bb25922b2f0149e0`.
+- **Last CI run:** [UPA50 CI 41286220636](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41286220636)
+  passed static checks, both configs, and the Standard build. The KSU-Next
+  v3.0.0 compile failed in `drivers/kernelsu/allowlist.c`: `TWA_RESUME` is
+  undefined and `put_task_struct` lacks its declaration in Linux 4.14. A
+  narrow source compatibility patch now maps the resume notification to the
+  baseline `task_work_add` boolean and includes `linux/sched/task.h`; its
+  rebuild is pending. The successful Standard package was
+  `UPA50-standard-oneui-A12-v0.0.0.zip` (20,924,452 bytes,
+  SHA-256 `de55b7af7f99ff911b39de8467526e3cd3c2c23bf26f10de1ea4544de1f55eec`);
+  artifact bundle `standard-oneui-android-12`, 58,775,929 bytes.
+- **Exact next commands:** `git diff --check`; commit the compatibility patch
+  and evidence updates with the required co-author trailer; push
+  `upa50/main`; inspect
+  `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow upa50-ci.yml --limit 5`;
+  review any failure with `gh run view <id> --log-failed`.
 
 ## Engineering gates
 
@@ -26,7 +30,7 @@
 |---|---|---|
 | Strategy A vs. B baseline decision | Selected, static only | `[VERIFIED-STATIC]` Mint/fork source lineage; no comparative CI build |
 | Baseline Standard build | Done | `[VERIFIED-BUILD]` Proton Clang 13.0.0 compiled the clean source and the validator accepted `UPA50-standard-oneui-A12-v0.0.0.zip` in [run 41280660290](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41280660290). Artifact bundle: `standard-oneui-android-12`, 58,777,341 bytes; bundle digest `066db25cd3ebda32d473e3088d9b9d49793ed9d6b992ca275ef3895a0df21eb3`. The ZIP's individual checksum is included in the artifact's `SHA256SUMS.txt` but has not been retrieved locally. |
-| Official KernelSU-Next overlay and Standard purity | In progress | `[VERIFIED-BUILD]` Standard config and binary purity passed in [run 41284747123](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41284747123). The v3.4.2 KSU build failed because its syscall ABI is incompatible with 4.14; the official v3.0.0 tracepoint-based pin is queued for CI validation. |
+| Official KernelSU-Next overlay and Standard purity | In progress | `[VERIFIED-BUILD]` Standard built in [run 41286220636](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41286220636); v3.0.0 KSU compilation failed in `allowlist.c` on 4.14 task-work APIs. A focused compatibility patch is pending CI. |
 | Config optimizations | Not started | No config changes |
 | SOVR feature ports | Not started | No imported kernel patches |
 | Three profiles | Not started | No profile implementation |
