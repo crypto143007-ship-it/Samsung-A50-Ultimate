@@ -56,3 +56,26 @@ diff --git a/kernel/syscall_hook_manager.c b/kernel/syscall_hook_manager.c
 @@ -260 +260 @@
 -		ret = strncpy_from_user_nofault(path, fn, sizeof(path));
 +		ret = ksu_strncpy_from_user_nofault_compat(path, fn, sizeof(path));
+diff --git a/kernel/pkg_observer.c b/kernel/pkg_observer.c
+--- a/kernel/pkg_observer.c
++++ b/kernel/pkg_observer.c
+@@ -24,3 +24,6 @@
+-static int ksu_handle_inode_event(struct fsnotify_mark *mark, u32 mask,
+-				  struct inode *inode, struct inode *dir,
+-				  const struct qstr *file_name, u32 cookie)
++static int ksu_handle_inode_event(struct fsnotify_group *group,
++		struct inode *inode, struct fsnotify_mark *inode_mark,
++		struct fsnotify_mark *vfsmount_mark, u32 mask,
++		const void *data, int data_type,
++		const unsigned char *file_name, u32 cookie,
++		struct fsnotify_iter_info *iter_info)
+@@ -32,2 +35 @@
+-	if (file_name->len == 13 &&
+-	    !memcmp(file_name->name, "packages.list", 13)) {
++	if (!strcmp((const char *)file_name, "packages.list")) {
+@@ -41 +43 @@
+-	.handle_inode_event = ksu_handle_inode_event,
++.handle_event = ksu_handle_inode_event,
+@@ -56 +58 @@
+-	if (fsnotify_add_inode_mark(m, inode, 0)) {
++	if (fsnotify_add_mark(m, inode, NULL, 0)) {

@@ -190,7 +190,16 @@ which fetches a moving branch.
   41293315969](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41293315969)
   failed while compiling `sucompat.c`: the `util.h` patch hunk count omitted
   the helper's final closing brace. The helper is complete in the patch
-  source; its hunk count is corrected and the next Actions build will verify
-  it.
+  source; its hunk count was corrected. `[VERIFIED-BUILD]` The following [run
+  41294391104](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41294391104)
+  compiled past the shared helper and failed later in `pkg_observer.c`.
+- **Linux 4.14 fsnotify compatibility:** `[VERIFIED-STATIC]` KernelSU-Next
+  v3.0.0 uses `fsnotify_ops.handle_inode_event`, `fsnotify_add_inode_mark`,
+  and a `qstr` filename argument. Linux 4.14 instead provides the
+  `handle_event` callback with a filename byte string and
+  `fsnotify_add_mark(mark, inode, mount, allow_dups)`. The compatibility
+  overlay adapts the callback signature and safe exact filename comparison,
+  and calls `fsnotify_add_mark(m, inode, NULL, 0)`, matching the baseline API.
+  This awaits CI.
 
 No physical-device test has been performed.

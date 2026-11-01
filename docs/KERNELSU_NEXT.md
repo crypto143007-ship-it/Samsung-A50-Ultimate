@@ -51,10 +51,17 @@ failed in `syscall_hook_manager.c` on the same no-fault helper and
 41293315969](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41293315969)
 failed because the patch's `util.h` hunk omitted the helper's closing brace.
 
+[VERIFIED-BUILD] In [UPA50 CI
+41294391104](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41294391104),
+the corrected helper passed compilation, then the build failed in
+`pkg_observer.c` because Linux 4.14 has the older fsnotify callback and inode
+mark APIs.
+
 [PROPOSED] The overlay removes the unused `linux/pgtable.h` include (the file
 uses no page-table identifiers and `linux/mm.h` includes `asm/pgtable.h`). It
 places the no-fault user-copy wrapper in shared `util.h`, using 4.14's
 `pagefault_disable()` / `pagefault_enable()` around `strncpy_from_user()`, and
 exposes ARM64's `untagged_addr` via `linux/uaccess.h`. The hunk count is
-corrected; these changes remain pending CI. No KernelSU-Next build or device
-functionality is verified.
+corrected. The observer overlay now adapts its callback signature, filename
+handling and inode-mark call to the 4.14 interfaces. These changes remain
+pending CI. No KernelSU-Next build or device functionality is verified.
