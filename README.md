@@ -4,7 +4,7 @@
 Galaxy A50 (`a50`), based on the Exynos 9610 source in this repository. The
 working baseline is the fork's `android-14.0` branch, Linux 4.14.194.
 
-**Status:** [VERIFIED-STATIC] No UPA50 kernel build or release is available.
+**Status:** [VERIFIED-STATIC] No validated UPA50 kernel build or release is available.
 Kernel builds and toolchain handling run in GitHub Actions only. No
 physical-device testing has been performed. Do not flash this branch.
 

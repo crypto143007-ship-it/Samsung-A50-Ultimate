@@ -53,10 +53,17 @@
 - **Standard config dependency:** `[VERIFIED-STATIC]` In [run
   41278030173](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41278030173),
   config generation failed with `drivers/Kconfig: can't open file
-  "drivers/kernelsu/Kconfig"` after submodule checkout was disabled. The
-  source tree needs the Kconfig input even for Standard, where the generated
-  config disables KSU. The submodule checkout is restored; package purity
-  remains gated on config and binary symbol scans.
+  "drivers/kernelsu/Kconfig"` after submodule checkout was disabled. That run
+  confirmed the inherited reference must be removed, not worked around by
+  restoring the legacy module.
+- **Legacy KernelSU removal:** `[VERIFIED-STATIC]` The source audit found the
+  rsuntk submodule at `KernelSU` (commit
+  `32548de0179fb1b075c87f5ff19751ea6db12f25`), the `drivers/kernelsu` symlink,
+  Kconfig/Makefile integration, five manual hooks in `fs/exec.c`,
+  `fs/open.c`, `fs/read_write.c`, `fs/stat.c` and `drivers/input/input.c`,
+  and root/permissive config fragments. These legacy hooks and fragments are
+  being removed from the Standard base. The official KernelSU-Next overlay is
+  a separate not-yet-integrated edition.
 - **Legacy line endings:** `[VERIFIED-STATIC]` The first full-tree CI scan
   found CRLF in 56 pre-existing C/header/Makefile files. No kernel source
   content was changed. The required global auto-text LF rule and explicit

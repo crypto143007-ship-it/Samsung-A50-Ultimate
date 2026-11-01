@@ -24,7 +24,6 @@ jobs:
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          submodules: true
           fetch-depth: 2
 
       - name: Check changed source and build-input line endings
@@ -82,6 +81,13 @@ jobs:
             echo "Credential-like value found in tracked source"
             exit 1
           fi
+          if git grep -n -Ei 'CONFIG_KSU|drivers/kernelsu|ksu_(execveat|handle_|input_hook|vfs_read_hook)|susfs|rsuntk/KernelSU' \
+            -- drivers fs kernel/configs build.sh; then
+            echo "Legacy KernelSU integration remains in the Standard base"
+            exit 1
+          fi
+          test ! -e KernelSU
+          test ! -e drivers/kernelsu
           if grep -RniE '(gh[[:space:]]+release[[:space:]]+delete|git[[:space:]]+push|Release[-]AIO|softprops/action-gh[-]release)' \
             .github/workflows; then
             echo "Unreviewed release or branch mutation found in a workflow"
@@ -102,8 +108,6 @@ jobs:
 
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          submodules: true
 
       - name: Cache pinned Proton source
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
@@ -162,8 +166,6 @@ jobs:
 
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          submodules: true
 
       - name: Cache pinned Proton source
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
@@ -277,7 +279,7 @@ jobs:
 
       - name: Check Standard configuration and binary purity
         run: |
-          if grep -Eq '^CONFIG_(KSU|SUSFS|KERNELSU)[A-Z0-9_]*=(y|m|[0-9]+|")' standard-artifacts/.config; then
+          if grep -Eq '^(# )?CONFIG_(KSU|SUSFS|KERNELSU)[A-Z0-9_]*(=| is not set)' standard-artifacts/.config; then
             echo "Standard config enables KernelSU, KernelSU-Next, or SuSFS"
             exit 1
           fi
