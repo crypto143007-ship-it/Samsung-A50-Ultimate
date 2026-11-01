@@ -79,6 +79,12 @@ diff --git a/kernel/pkg_observer.c b/kernel/pkg_observer.c
 @@ -56 +58 @@
 -	if (fsnotify_add_inode_mark(m, inode, 0)) {
 +	if (fsnotify_add_mark(m, inode, NULL, 0)) {
+diff --git a/kernel/kernel_umount.c b/kernel/kernel_umount.c
+--- a/kernel/kernel_umount.c
++++ b/kernel/kernel_umount.c
+@@ -146 +146 @@
+-	int err = task_work_add(current, &tw->cb, TWA_RESUME);
++	int err = task_work_add(current, &tw->cb, true);
 diff --git a/kernel/setuid_hook.c b/kernel/setuid_hook.c
 --- a/kernel/setuid_hook.c
 +++ b/kernel/setuid_hook.c
