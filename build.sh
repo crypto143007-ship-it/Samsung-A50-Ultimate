@@ -498,7 +498,9 @@ mkdir -p "$TMP_DIR"
 VERIFY_TOOLCHAIN || exit 1
 VERIFY_DEFCONFIG
 
-git submodule update --init "$TOP/KernelSU"
+if $BUILD_KERNEL_KSU; then
+    git submodule update --init "$TOP/KernelSU"
+fi
 
 if $BUILD_KERNEL_CI; then
 	export KBUILD_BUILD_USER="Clembot"

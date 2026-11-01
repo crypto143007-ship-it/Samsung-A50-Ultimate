@@ -42,6 +42,14 @@
   [41275135426](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41275135426)
   re-fetched both pinned refs and matched the committed manifests and version
   strings. This is not a kernel build result.
+- **First baseline CI attempt:** `[VERIFIED-BUILD]` In [run
+  41276281224](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41276281224),
+  the Standard config generated successfully and the kernel `Image` and ZIP
+  were produced with Proton Clang 13.0.0. The package step failed because the
+  workflow omitted `UPA50_EDITION` and `UPA50_VERSION`, so `build.sh` emitted
+  a legacy MintBeta filename and the expected UPA50 package could not be
+  validated; no artifact was uploaded. The follow-up sets those environment
+  values and avoids initializing the legacy KernelSU submodule for Standard.
 - **Legacy line endings:** `[VERIFIED-STATIC]` The first full-tree CI scan
   found CRLF in 56 pre-existing C/header/Makefile files. No kernel source
   content was changed. The required global auto-text LF rule and explicit

@@ -2,23 +2,21 @@
 
 ## NEXT ACTIONS
 
-- **Current gate:** Baseline Standard config/build with the verified Proton
-  toolchain; no kernel build has passed.
+- **Current gate:** Rerun the baseline Standard build/package validation with
+  the verified Proton toolchain.
 - **Build policy:** All toolchain fetches, configuration, builds, validation,
   packaging, and release work run in GitHub Actions only.
-- **Last good commit:** `619317b61` (toolchain-lock verification passed).
-- **Last green run:** None.
-- **Last failing run:** [Toolchain lock 41274212163](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41274212163),
-  `Record pinned compiler manifests`: `Permission denied` because the new
-  shell script was committed without its executable bit. Corrected locally;
-  no toolchain fetch or build ran.
-- **Last green run:** [Toolchain lock verification 41275135426](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41275135426);
-  both pinned manifests and version strings matched; no kernel compilation.
-- **Last failing run:** [UPA50 CI 41276158364](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41276158364),
-  `git diff --check` saw virtual line-ending changes from explicit source
-  attributes. Those extra patterns are removed, while the required global
-  and shell LF rules remain.
-- **Exact next commands:** Push the attribute correction, then inspect
+- **Last good commit:** `8abb1be55` (static checks and Standard config passed).
+- **Last passing gates:** Static checks and Standard config in [UPA50 CI
+  41276281224](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41276281224).
+  Compilation produced an Image and ZIP, but package-name validation failed
+  because the build job did not set the UPA50 edition/version environment.
+- **Last failing run:** [UPA50 CI 41276281224](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41276281224),
+  `UPA50-*.zip` was absent; build.sh emitted the legacy MintBeta filename.
+  Corrected the missing edition/version environment and prevented the
+  Standard job from fetching the legacy KernelSU submodule.
+- **Exact next commands:** Push the package-environment and Standard
+  submodule-isolation fix; inspect
   `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow upa50-ci.yml --limit 5`
   and review failures with `gh run view <id> --log-failed`.
 
@@ -27,7 +25,7 @@
 | Gate | Status | Evidence |
 |---|---|---|
 | Strategy A vs. B baseline decision | Selected, static only | `[VERIFIED-STATIC]` Mint/fork source lineage; no comparative CI build |
-| Baseline Standard build | Not started | No Actions run |
+| Baseline Standard build | In progress | `[VERIFIED-BUILD]` compile completed in [run 41276281224](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41276281224), but package validation failed; no artifact was uploaded |
 | Official KernelSU-Next overlay and Standard purity | Not started | No source overlay or purity result |
 | Config optimizations | Not started | No config changes |
 | SOVR feature ports | Not started | No imported kernel patches |
@@ -35,4 +33,4 @@
 | Package and validated release | Not started | No UPA50 artifact, tag, or release |
 | Physical-device verification | Not started | No A50 test results |
 
-No kernel build, artifact, release, or physical-device result is claimed.
+No validated build artifact, release, or physical-device result is claimed.

@@ -24,7 +24,6 @@ jobs:
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          submodules: true
           fetch-depth: 2
 
       - name: Check changed source and build-input line endings
@@ -102,8 +101,6 @@ jobs:
 
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          submodules: true
 
       - name: Cache pinned Proton source
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
@@ -162,8 +159,6 @@ jobs:
 
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          submodules: true
 
       - name: Cache pinned Proton source
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
@@ -200,6 +195,8 @@ jobs:
           UPA50_TOOLCHAIN_KIND: proton
           UPA50_SKIP_TOOLCHAIN_FETCH: "1"
           UPA50_USE_CCACHE: "1"
+          UPA50_EDITION: ${{ matrix.edition }}
+          UPA50_VERSION: "0.0.0"
         run: |
           set -o pipefail
           ./build.sh --automated --device a50 --variant "${{ matrix.variant }}" \
