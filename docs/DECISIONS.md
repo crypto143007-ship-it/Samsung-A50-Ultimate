@@ -16,8 +16,7 @@
 - **Boot command line:** The inherited packaging script forced
   `androidboot.selinux=permissive` for every build. UPA50's default package
   command line is changed to `enforcing`; only the script's explicit
-  permissive option changes the kernel config, and UPA50 workflows must not
-  use it.
+  permissive option changes this, and UPA50 workflows must not use it.
 - **Toolchain integrity:** Toolchains are fetched in CI from the exact commits
   in `toolchain.lock`. The content manifest is first computed in CI from each
   pinned source commit (trust-on-first-use anchored to that Git commit); the
@@ -28,7 +27,7 @@
   `android14-release` at `425c8149f17c8d9914bf690b4d5abe45a13fb993`.
   Their content manifests and compiler version strings are awaiting the first
   Ubuntu 22.04 Actions record run.
-- **First CI failure:** `[VERIFIED-BUILD]` The toolchain-lock run
+- **First CI failure:** `[VERIFIED-STATIC]` The toolchain-lock run
   [41274212163](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41274212163)
   failed before fetching either toolchain because `prepare_toolchain.sh` was
   not executable in Git. The script mode is corrected; no compiler hash or
@@ -39,6 +38,10 @@
   Proton Clang 13.0.0 and AOSP Clang 17.0.2. The hashes and first-line version
   strings are stored in `toolchain.lock`; this verifies provenance, not kernel
   build compatibility.
+- **Toolchain verification:** `[VERIFIED-STATIC]` CI run
+  [41275135426](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41275135426)
+  re-fetched both pinned refs and matched the committed manifests and version
+  strings. This is not a kernel build result.
 - **Editions and safety:** Standard excludes KernelSU/KernelSU-Next/SuSFS;
   KernelSU-Next is limited to the separate edition and pinned to official
   `v3.4.2` commit `4c706b5938665866ebe16944a481a7b91e3396af`. SuSFS is excluded.

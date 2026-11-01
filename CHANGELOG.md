@@ -2,5 +2,7 @@
 
 ## Unreleased
 
-- Project documentation cleanup and a toolchain environment override only.
-- No kernel-source changes, build artifacts, or release are included.
+- Added pinned toolchain verification and GitHub Actions build groundwork.
+- Updated package naming for UPA50 and changed the default boot command line
+  from permissive to enforcing.
+- No kernel-source changes, successful kernel build, or release is included.

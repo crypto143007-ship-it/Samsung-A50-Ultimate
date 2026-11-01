@@ -1,16 +1,16 @@
 # ULTIMATE PERFORMANCE A50
 
-UPA50 is an in-progress kernel project for the Samsung Galaxy A50 (`a50`),
-based on the Exynos 9610 source in this repository. The working baseline is
-the fork's `android-14.0` branch, Linux 4.14.194.
+[VERIFIED-STATIC] UPA50 is an in-progress kernel project for the Samsung
+Galaxy A50 (`a50`), based on the Exynos 9610 source in this repository. The
+working baseline is the fork's `android-14.0` branch, Linux 4.14.194.
 
-**Status:** No UPA50 kernel build or release is available. Kernel builds and
-toolchain handling run in GitHub Actions only. No physical-device testing has
-been performed. Do not flash this branch.
+**Status:** [VERIFIED-STATIC] No UPA50 kernel build or release is available.
+Kernel builds and toolchain handling run in GitHub Actions only. No
+physical-device testing has been performed. Do not flash this branch.
 
-The planned editions are Standard and KernelSU-Next. Standard must exclude
-KernelSU, KernelSU-Next, and SuSFS; the KernelSU-Next edition will use the
-official pinned component. These are requirements, not implemented or
+[PROPOSED] The planned editions are Standard and KernelSU-Next. Standard must
+exclude KernelSU, KernelSU-Next, and SuSFS; the KernelSU-Next edition will use
+the official pinned component. These are requirements, not implemented or
 verified behavior yet.
 
 ## Project information

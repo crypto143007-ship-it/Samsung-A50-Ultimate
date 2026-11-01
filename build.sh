@@ -158,6 +158,16 @@ SET_ZIPNAME() {
     MINT_TYPE="UB"
     MINT_SELINUX="Enforcing"
 
+    if [[ -n "${UPA50_EDITION:-}" ]]; then
+        UPA50_VERSION="${UPA50_VERSION:-0.0.0}"
+        [[ "$UPA50_EDITION" == "standard" || "$UPA50_EDITION" == "kernelsu-next" ]] ||
+            { script_echo "E: Invalid UPA50 edition: $UPA50_EDITION"; return 1; }
+        [[ "$UPA50_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] ||
+            { script_echo "E: Invalid UPA50 version: $UPA50_VERSION"; return 1; }
+        FILE_NAME="UPA50-${UPA50_EDITION}-${BUILD_VARIANT}-A${BUILD_ANDROID_PLATFORM}-v${UPA50_VERSION}.zip"
+        return
+    fi
+
     if $BUILD_KERNEL_CI; then
         if [[ $BUILD_KERNEL_BRANCH == mainline ]]; then
             MINT_VERSION="$KERNEL_BUILD_VERSION"
@@ -264,6 +274,9 @@ BUILD_RAMDISK() {
     fi
 }
 BUILD_IMAGE() {
+    local SELINUX_CMDLINE="androidboot.selinux=enforcing"
+    $BUILD_KERNEL_PERMISSIVE && SELINUX_CMDLINE="androidboot.selinux=permissive"
+
     script_echo " "
 	script_echo "I: Building kernel image..."
 	script_echo "    Header/Page size: $DEVICE_KERNEL_HEADER/$DEVICE_KERNEL_PAGESIZE"
@@ -274,7 +287,7 @@ BUILD_IMAGE() {
 
     "$TOP/tools/make/bin/mkbootimg" \
         --kernel "$TOP/arch/arm64/boot/Image" --ramdisk "$TOP/tools/make/$RAMDISK" \
-        --cmdline "androidboot.selinux=enforcing loop.max_part=7" --board "$DEVICE_KERNEL_BOARD" \
+        --cmdline "$SELINUX_CMDLINE loop.max_part=7" --board "$DEVICE_KERNEL_BOARD" \
         --base "$DEVICE_KERNEL_BASE" --pagesize "$DEVICE_KERNEL_PAGESIZE" \
         --kernel_offset "$DEVICE_KERNEL_OFFSET" --ramdisk_offset "$DEVICE_RAMDISK_OFFSET" \
         --second_offset "$DEVICE_SECOND_OFFSET" --tags_offset "$DEVICE_TAGS_OFFSET" \
@@ -356,6 +369,8 @@ show_usage() {
 	script_echo "                          Not available for 'recovery' variant."
 	script_echo "-n, --no-clean            Do not clean up before build."
 	script_echo "-p, --permissive          Build kernel with SELinux fully permissive. NOT RECOMMENDED!"
+	script_echo " "
+	script_echo "    --config-only          Generate the merged .config without compiling."
 	script_echo " "
 	script_echo "-h, --help                Show this message."
 	script_echo " "

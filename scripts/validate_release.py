@@ -6,10 +6,16 @@ import zipfile
 from pathlib import Path
 
 
-REQUIRED_FILES = ("anykernel.sh", "tools/ak3-core.sh", "Image", "dtb.img")
+REQUIRED_FILES = (
+    "anykernel.sh",
+    "tools/ak3-core.sh",
+    "Image",
+    "dtb.img",
+    "mint.prop",
+)
 
 
-def validate_package(package: Path) -> None:
+def validate_package(package: Path, expected_edition: str | None) -> None:
     with zipfile.ZipFile(package) as archive:
         corrupt_entry = archive.testzip()
         if corrupt_entry is not None:
@@ -40,11 +46,27 @@ def validate_package(package: Path) -> None:
         ):
             raise SystemExit(f"{package} is missing a non-empty ramdisk")
 
+        if expected_edition is not None:
+            if not package.name.startswith(f"UPA50-{expected_edition}-"):
+                raise SystemExit(
+                    f"{package} filename does not match edition {expected_edition}"
+                )
+            manifest = archive.read("mint.prop").decode("utf-8")
+            expected_ksu = "true" if expected_edition == "kernelsu-next" else "false"
+            if f"ro.mint.build.ksu={expected_ksu}" not in manifest.splitlines():
+                raise SystemExit(
+                    f"{package} manifest does not match edition {expected_edition}"
+                )
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Validate kernel release packages.")
     parser.add_argument("--release-dir", type=Path, required=True)
     parser.add_argument("--expected-packages", type=int, required=True)
+    parser.add_argument("--expected-name")
+    parser.add_argument(
+        "--expected-edition", choices=("standard", "kernelsu-next")
+    )
     args = parser.parse_args()
 
     if not args.release_dir.is_dir():
@@ -60,8 +82,16 @@ def main() -> None:
             f"Expected {args.expected_packages} kernel packages, found {len(packages)}"
         )
 
+    if args.expected_name and (
+        len(packages) != 1 or packages[0].name != args.expected_name
+    ):
+        raise SystemExit(
+            f"Expected package {args.expected_name}, found "
+            f"{', '.join(package.name for package in packages)}"
+        )
+
     for package in packages:
-        validate_package(package)
+        validate_package(package, args.expected_edition)
 
     print(f"Validated {len(packages)} kernel release packages")
 
