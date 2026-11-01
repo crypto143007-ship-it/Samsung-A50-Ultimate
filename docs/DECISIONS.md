@@ -106,5 +106,22 @@
   `8e3c1a9567b77f0932d91b3304cdcbe38adfb9a8`; they will be removed as the
   replacement workflows are introduced. They did not run UPA50 builds.
 
-No toolchain manifest has yet been recorded, no kernel CI build has run, and
-no physical-device test has been performed.
+[VERIFIED-BUILD] Baseline Standard config, Proton Clang 13.0.0 compilation,
+package validation, artifact upload, and config/binary purity passed in [UPA50
+CI 41280660290](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41280660290).
+The uploaded `standard-oneui-android-12` artifact bundle is 58,777,341 bytes
+with upload digest
+`066db25cd3ebda32d473e3088d9b9d49793ed9d6b992ca275ef3895a0df21eb3`. That is
+the Actions artifact archive digest, not the kernel ZIP checksum; the ZIP's
+individual checksum is present in `SHA256SUMS.txt` inside the artifact and has
+not been retrieved locally.
+
+[VERIFIED-STATIC] The pinned KernelSU-Next overlay is implemented in
+`.github/scripts/setup-kernelsu-next.sh` with source identity recorded in
+`kernelsu-next.lock`. It intentionally avoids the upstream `kernel/setup.sh`,
+which fetches a moving branch. The tag also contains separate SuSFS LKM files;
+the pinned in-tree `kernel/Kbuild` does not link them, and CI checks both config
+and compiled output for SuSFS. Its independent build/purity gate is pending a
+successful Actions run.
+
+No physical-device test has been performed.

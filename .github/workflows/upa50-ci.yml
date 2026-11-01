@@ -70,7 +70,7 @@ jobs:
 
       - name: Check shell and workflow syntax
         run: |
-          bash -n build.sh scripts/*.sh
+          bash -n build.sh scripts/*.sh .github/scripts/*.sh
           ruby -e 'require "yaml"; ARGV.each { |file| YAML.parse_file(file) }' .github/workflows/*.yml
           python3 -m py_compile scripts/*.py
 
@@ -82,7 +82,7 @@ jobs:
             exit 1
           fi
           if git grep -n -Ei 'CONFIG_KSU|drivers/kernelsu|ksu_(execveat|handle_|input_hook|vfs_read_hook)|susfs|rsuntk/KernelSU' \
-            -- drivers fs kernel/configs build.sh; then
+            -- drivers fs; then
             echo "Legacy KernelSU integration remains in the Standard base"
             exit 1
           fi
@@ -100,6 +100,10 @@ jobs:
   config:
     runs-on: ubuntu-22.04
     needs: static
+    strategy:
+      fail-fast: false
+      matrix:
+        edition: [standard, kernelsu-next]
     steps:
       - name: Free runner disk space
         run: |
@@ -126,7 +130,19 @@ jobs:
             lib32stdc++6 libc6-dev-i386 libelf-dev libncurses-dev libssl-dev \
             lz4 python3 zip unzip
 
-      - name: Generate Standard configuration
+      - name: Set up pinned KernelSU-Next overlay
+        if: matrix.edition == 'kernelsu-next'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ${{ runner.temp }}/KernelSU-Next
+          key: upa50-kernelsu-next-${{ hashFiles('kernelsu-next.lock') }}
+
+      - name: Apply pinned KernelSU-Next overlay
+        if: matrix.edition == 'kernelsu-next'
+        run: |
+          bash .github/scripts/setup-kernelsu-next.sh "$RUNNER_TEMP/KernelSU-Next"
+
+      - name: Generate edition configuration
         env:
           UPA50_TOOLCHAIN_DIR: ${{ steps.toolchain.outputs.toolchain_dir }}
           UPA50_TOOLCHAIN_KIND: proton
@@ -137,12 +153,13 @@ jobs:
         run: |
           ./build.sh --automated --device a50 --variant oneui --android 12 --config-only
           cp out/UPA50-oneui-A12.config .config
-          printf 'Edition: standard\nVariant: oneui\nAndroid: 12\n' >> BUILD_INFO.txt
+          printf 'Edition: %s\nVariant: oneui\nAndroid: 12\n' \
+            "${{ matrix.edition }}" >> BUILD_INFO.txt
 
       - name: Upload generated configuration
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: standard-oneui-android-12-config
+          name: ${{ matrix.edition }}-oneui-android-12-config
           path: |
             .config
             BUILD_INFO.txt
@@ -155,7 +172,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        edition: [standard]
+        edition: [standard, kernelsu-next]
         variant: [oneui]
         android: [12]
     steps:
@@ -196,7 +213,19 @@ jobs:
           df -h
           ccache -s
 
-      - name: Build and validate Standard package
+      - name: Set up pinned KernelSU-Next overlay
+        if: matrix.edition == 'kernelsu-next'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ${{ runner.temp }}/KernelSU-Next
+          key: upa50-kernelsu-next-${{ hashFiles('kernelsu-next.lock') }}
+
+      - name: Apply pinned KernelSU-Next overlay
+        if: matrix.edition == 'kernelsu-next'
+        run: |
+          bash .github/scripts/setup-kernelsu-next.sh "$RUNNER_TEMP/KernelSU-Next"
+
+      - name: Build and validate package
         env:
           UPA50_TOOLCHAIN_DIR: ${{ steps.toolchain.outputs.toolchain_dir }}
           UPA50_TOOLCHAIN_KIND: proton
@@ -228,6 +257,11 @@ jobs:
               "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
           } >> artifacts/BUILD_INFO.txt
           (cd artifacts && sha256sum *.zip Image dtb.img .config vmlinux build.log BUILD_INFO.txt CHANGELOG.md > SHA256SUMS.txt)
+          {
+            printf 'Package: %s\n' "$(basename "$package")"
+            printf 'Package size: %s bytes\n' "$(stat -c%s "$package")"
+            cat artifacts/SHA256SUMS.txt
+          } | tee -a "$GITHUB_STEP_SUMMARY"
           ccache -s
 
       - name: Upload build artifacts
@@ -291,3 +325,38 @@ jobs:
             echo "Standard Image contains a KernelSU or SuSFS string"
             exit 1
           fi
+
+  kernelsu-next-validation:
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+      - name: Download KernelSU-Next build
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: kernelsu-next-oneui-android-12
+          path: kernelsu-next-artifacts
+
+      - name: Check KernelSU-Next edition configuration and pin
+        run: |
+          grep -qx 'CONFIG_KSU=y' kernelsu-next-artifacts/.config
+          grep -qx 'CONFIG_KPROBES=y' kernelsu-next-artifacts/.config
+          grep -qx 'CONFIG_EXT4_FS=y' kernelsu-next-artifacts/.config
+          if grep -Eq '^(# )?CONFIG_[A-Z0-9_]*SUSFS[A-Z0-9_]*(=| is not set)' \
+            kernelsu-next-artifacts/.config; then
+            echo "SuSFS configuration is not permitted"
+            exit 1
+          fi
+          if ! nm kernelsu-next-artifacts/vmlinux | grep -Eq '(^|[[:space:]])ksu_[[:alnum:]_]*$'; then
+            echo "KernelSU-Next is not present in the built vmlinux"
+            exit 1
+          fi
+          if nm kernelsu-next-artifacts/vmlinux | grep -Eiq '(^|[^[:alnum:]_])susfs([^[:alnum:]_]|$)'; then
+            echo "SuSFS symbol found in KernelSU-Next vmlinux"
+            exit 1
+          fi
+          if strings kernelsu-next-artifacts/Image | grep -Eiq '(^|[^[:alnum:]_])susfs([^[:alnum:]_]|$)'; then
+            echo "SuSFS string found in KernelSU-Next Image"
+            exit 1
+          fi
+          source kernelsu-next.lock
+          grep -Fqx "KernelSU-Next commit: $commit" kernelsu-next-artifacts/BUILD_INFO.txt

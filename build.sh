@@ -509,6 +509,13 @@ fi
 merge_config "partial-deknox-$BUILD_ANDROID_PLATFORM"
 merge_config "mali-$BUILD_ANDROID_PLATFORM"
 merge_config "variant_$BUILD_VARIANT"
+if [[ "${UPA50_EDITION:-standard}" == "kernelsu-next" ]]; then
+    if [[ ! -f "$TOP/drivers/kernelsu/Kconfig" ]]; then
+        script_echo "E: KernelSU-Next overlay is missing from this edition."
+        exit 1
+    fi
+    echo "CONFIG_KPROBES=y" >> "$BUILD_CONFIG_DIR/$BUILD_DEVICE_TMP_CONFIG"
+fi
 
 # Build Mint
 BUILD_KERNEL || exit 1
