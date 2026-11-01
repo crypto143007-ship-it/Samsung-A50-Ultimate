@@ -120,6 +120,9 @@ jobs:
           rm -f ./release/kernel_config_*.txt
           rm -rf ./release/aosp-* ./release/oneui-*
 
+      - name: Validate every release package
+        run: python3 tools/make/validate_release.py --release-dir ./release --expected-packages 8
+
       - name: Upload release
         uses: Hs1r1us/Release-AIO@v1.0
         with:
