@@ -1,83 +1,32 @@
-# UPA50 engineering decisions
+# UPA50 decisions
 
-## Repository correction and branch strategy
+- **Repository and branch:** Work in `crypto143007-ship-it/Samsung-A50-Ultimate`
+  on `upa50/main`; preserve the existing `android-14.0` history. No force-push
+  or history rewrite is permitted on that branch.
+- **Base kernel:** Select Strategy A, the fork's Mint-derived Linux 4.14.194
+  source, as the conservative integration baseline. The fork baseline
+  `bec0c2aff1ee8a02ac9f582d60fe611f1d2bc939` is one commit after Mint tag
+  `xbeta-1413_a50dx` (`7f72a8b689677562f028d78b2e91bd79277a0aba`); its delta is
+  the A50 Bluetooth HID change. SOVR v4.0 (`98c776aae7ae2f41153e85d25a0f4336b1631316`)
+  is a separate 4.14.357 history. This source-lineage decision is
+  `[VERIFIED-STATIC]`, not a build or device-compatibility result. Revisit only
+  if measured CI or compatibility evidence warrants it.
+- **Build host:** Use GitHub Actions on `ubuntu-22.04` only. This Windows host
+  has no usable WSL2; do not download toolchains or build kernels locally.
+- **Toolchain integrity:** Toolchains are fetched in CI from the exact commits
+  in `toolchain.lock`. The content manifest is first computed in CI from each
+  pinned source commit (trust-on-first-use anchored to that Git commit); the
+  resulting hashes and version strings must be committed before verify-mode
+  builds can pass.
+- **Editions and safety:** Standard excludes KernelSU/KernelSU-Next/SuSFS;
+  KernelSU-Next is limited to the separate edition and pinned to official
+  `v3.4.2` commit `4c706b5938665866ebe16944a481a7b91e3396af`. SuSFS is excluded.
+  Exactly three profiles are planned; thermal, charging, and battery
+  protections remain untouched.
+- **Inherited workflows:** The former development, Galaxy A50, and KernelSU
+  workflows were reduced to manual informational stubs in commit
+  `8e3c1a9567b77f0932d91b3304cdcbe38adfb9a8`; they will be removed as the
+  replacement workflows are introduced. They did not run UPA50 builds.
 
-- **Decision:** Use `crypto143007-ship-it/Samsung-A50-Ultimate` as the sole project repository and preserve its existing `android-14.0` branch as the fork baseline. Perform UPA50 work on `upa50/main`.
-- **Evidence:** [VERIFIED-STATIC] The initial worktree pointed at `crypto143007-ship-it/Ultimate-Performance-A50`, an empty unrelated repository with one local scaffold commit, no kernel tree, and no default branch. The specified fork reports default branch `android-14.0`, HEAD `bec0c2aff1ee8a02ac9f582d60fe611f1d2bc939`, and 10,101 commits. The corrected `origin` points at the specified fork; `upa50/main` is based on the fetched fork branch.
-- **Fork ancestry:** [VERIFIED-STATIC] GitHub API identifies `FreshROMs/android_kernel_samsung_exynos9610_mint` as both the fork's parent and source repository.
-- **Rejected alternative:** Continue development on the empty repository. This would create a second project and discard the kernel source/history required by the specification.
-- **History safety:** [VERIFIED-STATIC] No force-push or rewrite was made to the existing `android-14.0` branch.
-
-## Windows checkout limitation
-
-- **Decision:** Do not build on native Windows. Use GitHub Actions on Ubuntu 22.04 unless WSL2 becomes available.
-- **Evidence:** [VERIFIED-STATIC] `wsl -l -v` reported `WSL_E_WSL_OPTIONAL_COMPONENT_REQUIRED`. The Windows worktree cannot materialize the full source because Git rejects reserved Windows filenames present upstream (`drivers/gpu/drm/nouveau/nvkm/subdev/i2c/aux.c`, `aux.h`, and `include/soc/arc/aux.h`). Git's object database contains the source; the sparse checkout is limited to documentation/workflow paths.
-- **Rejected alternative:** Attempt a native Windows kernel build or alter source paths to work around NTFS. Neither is supported or justified.
-
-## Base-kernel decision
-
-- **Decision:** [VERIFIED-STATIC] Select **Strategy A: FreshROMs Mint 4.14.194, using the fork's exact `android-14.0` HEAD as the working baseline, with only individually reviewed and tested backports**. Do not merge SOVR wholesale. This is a conservative source/compatibility decision, not a claim that Strategy A has compiled or is device-validated.
-- **Evidence:** [VERIFIED-STATIC] The fork's `android-14.0` HEAD is one commit after Mint tag `xbeta-1413_a50dx`, and direct `git merge-base` confirms that tag as its base. The sole delta is the A50 HID Bluetooth support change in `drivers/hid/hid-samsung.c`. SOVR v4.0 is a separate history with no merge base reported by GitHub compare, despite targeting the A50 and retaining Linux 4.14; its v4.0 and v4.1 tags use 4.14.357. These identity and configuration findings are documented in `docs/upstream-analysis/FORK_BASELINE.md` and `docs/upstream-analysis/SOVR_BASELINE.md`.
-- **Rationale:** [VERIFIED-STATIC] Mint/fork has the strongest demonstrated lineage and exact-device baseline continuity. SOVR has useful static features (MGLRU, ZSTD zram, BBR default, and CAKE), but adopting its separately evolved tree would require broad boot-critical driver, DTS, Mali, security, and integration reconciliation. The Windows host cannot build locally and no comparative CI build evidence exists yet. Therefore, retain Mint as the integration base and assess any SOVR-origin capability as a discrete backport rather than taking the SOVR tree.
-- **Not yet verified:** [PROPOSED] Neither Strategy A nor Strategy B has been configured and compiled using pinned Proton Clang 13 and AOSP Clang 17 toolchains on the actual tree. Comparative effort is not measured, boot/runtime compatibility is not device-tested, and the SOVR all-ref/full-history mirror could not be completed. Build and compatibility evidence may require revisiting this choice before kernel changes are accepted.
-- **Withdrawn earlier note:** A prior bootstrap commit in the wrong empty repository favored SOVR without build evidence. That preference is explicitly withdrawn and is not part of this project decision.
-
-## Edition and optional component policy
-
-- **Decision:** SuSFS is not included by default. Standard must eventually exclude KSU/KernelSU-Next/SuSFS code and configuration; a separate KernelSU-Next edition must use the official upstream component.
-- **Status:** [PROPOSED] No source changes have implemented this policy yet. Exact KSU integration, version, commit, and hooks remain to be verified against upstream source.
-
-## Inherited workflow containment
-
-- **Decision:** [VERIFIED-STATIC] Make the inherited `development.yml`,
-  `galaxy-a50.yml`, and `kernelsu.yml` manual-dispatch-only inert stubs with
-  read-only repository permissions. Do not retain their publishers or
-  self-updating behavior.
-- **`development.yml`:** [VERIFIED-STATIC] Previously ran on manual dispatch
-  and `wip-*` pushes; built eight development variants twice (without root
-  and with the old KernelSU), uploaded images/configs/ZIP artifacts, merged
-  package artifacts, deleted older `xbeta` releases, and published a new
-  `xbeta-*_a50dx` release using `Release-AIO`.
-- **`galaxy-a50.yml`:** [VERIFIED-STATIC] Previously ran on manual dispatch
-  and every `android-*` push; built four variants both without root and with
-  old KernelSU, uploaded images/configs/ZIP artifacts, and published a
-  `mainline-*_a50dx` release labeled Mint Stable using `Release-AIO`. Its
-  trigger and publication behavior could run for changes to the protected
-  baseline branch.
-- **`kernelsu.yml`:** [VERIFIED-STATIC] Previously checked out the
-  `KernelSU` submodule, updated it from a moving upstream ref, committed the
-  result, and pushed it back to the triggering branch with the workflow token.
-  It did not pin the update or require review.
-- **Containment result:** [VERIFIED-STATIC] The three workflows now only run
-  an informational echo on explicit manual dispatch. They do not check out
-  code, build, upload artifacts, delete releases, publish releases, create
-  tags, or push commits. The UPA50-specific CI workflow is a separate,
-  forthcoming task; no build or release is enabled by these stubs.
-- **PR merge condition:** [VERIFIED-STATIC] PR #1 was unsafe to merge before
-  the containment commit because the inherited workflows could publish and
-  mutate branches. It is safe with respect to those inherited publishers
-  only after this containment commit is present on the PR branch and reviewed;
-  this does not certify the forthcoming build workflow or complete project.
-
-## Read-only upstream repository identity checks
-
-- **SOVR canonical name:** [VERIFIED-STATIC] GitHub resolves `ruuiii-tk/SOVR-Kernel-A50` to `SOVR-Technologies/SOVR-Kernel-A50`. The latter reports `main` as its default branch and is not itself a fork.
-- **SOVR release scope:** [VERIFIED-STATIC] Nine tags are visible; `v4.0` resolves to `98c776aae7ae2f41153e85d25a0f4336b1631316`, and the later `v4.1-final` tag resolves to `195b69f9b4e71f7e9ce409feb47aca253021a68e`. Both remain on Linux 4.14.357. Static findings and the incomplete history acquisition are recorded in `docs/upstream-analysis/SOVR_BASELINE.md`.
-- **Mint release scope:** [VERIFIED-STATIC] `xbeta-1413_a50dx` is a lightweight tag at `7f72a8b689677562f028d78b2e91bd79277a0aba`.
-- **Official KernelSU-Next tags:** [VERIFIED-STATIC] The full mirror contains 8,985 commits and all visible refs. `v3.4.2` is the newest release tag and resolves to `4c706b5938665866ebe16944a481a7b91e3396af`; its Kconfig was inspected. SOVR v4.0's in-tree integration and updater script were inspected, but equivalence of its vendored code to an exact official commit remains unverified.
-
-## KernelSU-Next hook compatibility is unresolved
-
-- **Evidence:** [VERIFIED-STATIC] Official tag `v3.4.2` has `CONFIG_KSU` depend on `KPROBES && EXT4_FS`, with `default y`; its Kconfig and hook sources use kprobes. The Mint A50 core defconfig explicitly disables `CONFIG_KPROBES`. The inspected official tag does not define `CONFIG_KSU_MANUAL_HOOK`.
-- **Decision:** [PROPOSED] Do not enable or integrate KernelSU-Next until its exact non-GKI Linux 4.14 support, hook requirements, and impact of enabling KPROBES are reviewed against the A50 tree and a real build.
-- **Rejected shortcut:** Copying SOVR's reported manual-hook configuration into official v3.4.2 without verifying that the symbol and implementation exist in that official tag.
-
-## Master prompt and continuation scope
-
-- [VERIFIED-STATIC] The owner attached and supplied the full 441-line master
-  specification in this continuation. It is the governing project
-  specification; use Section 19 for the final blocked/completion report and
-  Section 18 for acceptance criteria.
-- [VERIFIED-STATIC] This work remains in the specified existing fork as
-  explicitly directed by the continuation, rather than creating a second
-  repository. No permission or branch-protection bypass is attempted.
+No toolchain manifest has yet been recorded, no kernel CI build has run, and
+no physical-device test has been performed.

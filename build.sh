@@ -34,7 +34,7 @@
 # [
 # Directories
 TOP="$(pwd)"
-TOOLCHAIN="$TOP/toolchain"
+TOOLCHAIN="${UPA50_TOOLCHAIN_DIR:-$TOP/toolchain}"
 OUT_DIR="$TOP/out"
 TMP_DIR="$OUT_DIR/tmp"
 DEVICE_DB_DIR="$TOP/Documentation/device-db"
@@ -44,6 +44,11 @@ SUB_CONFIG_DIR="$TOP/kernel/configs"
 # Toolchain options
 BUILD_PREF_COMPILER="clang"
 BUILD_PREF_COMPILER_VERSION="proton"
+if [[ "${UPA50_TOOLCHAIN_KIND:-}" == "aosp" ]]; then
+    BUILD_PREF_COMPILER_VERSION="clang"
+elif [[ "${UPA50_TOOLCHAIN_KIND:-}" == "proton" ]]; then
+    BUILD_PREF_COMPILER_VERSION="proton"
+fi
 
 # Build variables - DO NOT CHANGE
 export ARCH="arm64"
@@ -87,7 +92,13 @@ VERIFY_TOOLCHAIN() {
     sleep 2
     script_echo " "
 
-    if [ -d "$TOOLCHAIN" ]; then
+    if [[ "${UPA50_SKIP_TOOLCHAIN_FETCH:-0}" == "1" ]]; then
+        if [[ ! -x "$TOOLCHAIN/bin/clang" ]]; then
+            script_echo "E: Verified CI toolchain is missing: $TOOLCHAIN/bin/clang"
+            return 1
+        fi
+        script_echo "I: Using CI-verified toolchain at $TOOLCHAIN"
+    elif [ -d "$TOOLCHAIN" ]; then
         script_echo "I: Toolchain found at repository root"
         cd "$TOOLCHAIN" || exit
         git pull
@@ -107,7 +118,7 @@ VERIFY_TOOLCHAIN() {
     fi
 
     export PATH="${TOOLCHAIN}/bin:$PATH"
-	export LD_LIBRARY_PATH="${TOOLCHAIN}/lib:$LD_LIBRARY_PATH"
+	export LD_LIBRARY_PATH="${TOOLCHAIN}/lib:${LD_LIBRARY_PATH:-}"
 
     # Proton Clang 13
     export CROSS_COMPILE="aarch64-linux-gnu-"
@@ -446,7 +457,7 @@ script_echo "   Output file:        $OUT_DIR/$FILE_NAME"
 rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
 
-VERIFY_TOOLCHAIN
+VERIFY_TOOLCHAIN || exit 1
 VERIFY_DEFCONFIG
 
 git submodule update --init "$TOP/KernelSU"
