@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: upa50-ci-${{ github.event.pull_request.number || github.ref }}
+  group: upa50-ci-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -42,7 +42,12 @@ jobs:
               if not raw_path:
                   continue
               path = raw_path.decode()
-              if path.rsplit("/", 1)[-1] != "Makefile" and not path.endswith(tuple(extensions)):
+              basename = path.rsplit("/", 1)[-1]
+              if (
+                  basename != "Makefile"
+                  and not basename.startswith("Kconfig")
+                  and not path.endswith(tuple(extensions))
+              ):
                   continue
               with open(path, "rb") as source:
                   if b"\r\n" in source.read():

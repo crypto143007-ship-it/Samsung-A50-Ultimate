@@ -42,6 +42,10 @@
   [41275135426](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41275135426)
   re-fetched both pinned refs and matched the committed manifests and version
   strings. This is not a kernel build result.
+- **Legacy line endings:** `[VERIFIED-STATIC]` The first full-tree CI scan
+  found CRLF in 56 pre-existing C/header/Makefile files. No kernel source
+  content was changed; `.gitattributes` now explicitly requests LF for these
+  source/config extensions so clean Actions checkouts normalize them.
 - **Editions and safety:** Standard excludes KernelSU/KernelSU-Next/SuSFS;
   KernelSU-Next is limited to the separate edition and pinned to official
   `v3.4.2` commit `4c706b5938665866ebe16944a481a7b91e3396af`. SuSFS is excluded.

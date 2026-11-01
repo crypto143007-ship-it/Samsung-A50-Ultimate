@@ -14,9 +14,13 @@
   no toolchain fetch or build ran.
 - **Last green run:** [Toolchain lock verification 41275135426](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41275135426);
   both pinned manifests and version strings matched; no kernel compilation.
-- **Exact next commands:** Push the UPA50 CI workflow and packaging changes,
-  inspect `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow upa50-ci.yml --limit 5`,
-  then review failures with `gh run view <id> --log-failed`.
+- **Last failing run:** [UPA50 CI 41275652948](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41275652948),
+  static LF check found 56 historical CRLF source files; explicit source
+  attributes were added without editing kernel content.
+- **Exact next commands:** Push the explicit LF attributes and corrected
+  concurrency key, then inspect
+  `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow upa50-ci.yml --limit 5`
+  and review failures with `gh run view <id> --log-failed`.
 
 ## Engineering gates
 
