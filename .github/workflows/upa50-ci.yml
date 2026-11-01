@@ -151,7 +151,7 @@ jobs:
           UPA50_EDITION: ${{ matrix.edition }}
           UPA50_VERSION: "0.0.0"
         run: |
-          ./build.sh --automated --device a50 --variant oneui --android 12 --config-only
+          bash ./build.sh --automated --device a50 --variant oneui --android 12 --config-only
           cp out/UPA50-oneui-A12.config .config
           printf 'Edition: %s\nVariant: oneui\nAndroid: 12\n' \
             "${{ matrix.edition }}" >> BUILD_INFO.txt
@@ -235,7 +235,7 @@ jobs:
           UPA50_VERSION: "0.0.0"
         run: |
           set -o pipefail
-          ./build.sh --automated --device a50 --variant "${{ matrix.variant }}" \
+          bash ./build.sh --automated --device a50 --variant "${{ matrix.variant }}" \
             --android "${{ matrix.android }}" 2>&1 | tee build.log
           package="$(find out -maxdepth 1 -type f -name 'UPA50-*.zip' -print -quit)"
           test -n "$package"
