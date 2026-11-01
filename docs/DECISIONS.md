@@ -165,6 +165,15 @@ which fetches a moving branch.
   `linux/pgtable.h`, which does not exist in this 4.14 tree. Source inspection
   found no page-table identifiers used in that file beyond the include, and
   `include/linux/mm.h` already includes `asm/pgtable.h`. The compatibility
-  patch removes only the unused include; this is pending CI.
+  patch removes only the unused include. `[VERIFIED-BUILD]` The next [run
+  41289938397](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41289938397)
+  compiled past the include and then failed on the next 4.14 mismatch.
+- **Linux 4.14 no-fault user-string compatibility:** `[VERIFIED-STATIC]` The
+  next failure was three references to `strncpy_from_user_nofault`, absent
+  from this baseline. In 4.14, `strncpy_from_user()` is implemented through
+  exception-table user access, and `pagefault_disable()` / `pagefault_enable()`
+  are available. A local compatibility helper now brackets the copy with
+  those calls to preserve no-fault behavior in the syscall hooks. This remains
+  pending CI compilation.
 
 No physical-device test has been performed.

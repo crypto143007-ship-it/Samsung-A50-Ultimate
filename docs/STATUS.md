@@ -7,19 +7,18 @@
   images free of SuSFS.
 - **Build policy:** All toolchain fetches, configuration, builds, validation,
   packaging, and release work run in GitHub Actions only.
-- **Last attempted commit:** `01a1265da`.
-- **Last CI run:** [UPA50 CI 41288696197](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41288696197)
+- **Last attempted commit:** `e4238d339`.
+- **Last CI run:** [UPA50 CI 41289938397](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41289938397)
   passed static checks, both configs, and the Standard build. The KSU-Next
-  v3.0.0 build compiled past the task-work and seccomp API incompatibilities,
-  then failed in `drivers/kernelsu/sucompat.c` because Linux 4.14 does not
-  provide `linux/pgtable.h`. That file does not use page-table identifiers;
-  its `linux/mm.h` include provides `asm/pgtable.h`. The compatibility overlay
-  now removes only the unused include; CI must verify it. The successful
-  Standard package was
+  v3.0.0 build compiled past the task-work, seccomp, and unused page-table
+  include mismatches, then failed in `drivers/kernelsu/sucompat.c` because
+  `strncpy_from_user_nofault` is unavailable in Linux 4.14. A local helper now
+  wraps the baseline `strncpy_from_user` with page faults disabled to preserve
+  no-fault behavior; CI must verify it. The successful Standard package was
   `UPA50-standard-oneui-A12-v0.0.0.zip` (20,924,452 bytes,
   SHA-256 `de55b7af7f99ff911b39de8467526e3cd3c2c23bf26f10de1ea4544de1f55eec`);
   artifact bundle `standard-oneui-android-12`, 58,775,929 bytes.
-- **Exact next commands:** `git diff --check`; commit the page-table include
+- **Exact next commands:** `git diff --check`; commit the no-fault user-copy
   compatibility update and evidence with the required co-author trailer; push
   `upa50/main`; inspect
   `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow upa50-ci.yml --limit 5`;

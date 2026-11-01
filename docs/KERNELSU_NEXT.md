@@ -36,8 +36,14 @@ the seccomp compatibility change compiled and the build advanced to
 `drivers/kernelsu/sucompat.c`. It then failed because Linux 4.14 has no
 `linux/pgtable.h`.
 
-[PROPOSED] The pinned `sucompat.c` only includes that header and does not
-reference page-table APIs; Linux 4.14's `linux/mm.h` already includes
-`asm/pgtable.h`. The next overlay removes the unused, unavailable include. It
-is not build-verified yet. No KernelSU-Next build or device functionality is
-verified.
+[VERIFIED-BUILD] In [UPA50 CI
+41289938397](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41289938397),
+the build passed the missing-include failure and then stopped because
+`strncpy_from_user_nofault` is not available in Linux 4.14.
+
+[PROPOSED] The pinned `sucompat.c` uses no page-table identifiers, and Linux
+4.14's `linux/mm.h` already includes `asm/pgtable.h`, so the overlay removes
+the unused `linux/pgtable.h` include. It also adds a local wrapper around
+`strncpy_from_user()` with page faults disabled, preserving the no-fault
+semantics needed by the syscall hooks. Neither change is build-verified yet.
+No KernelSU-Next build or device functionality is verified.

@@ -18,3 +18,26 @@ diff --git a/kernel/sucompat.c b/kernel/sucompat.c
 +++ b/kernel/sucompat.c
 @@ -5 +5,0 @@
 -#include <linux/pgtable.h>
+@@ -24,0 +24,10 @@
++static long ksu_strncpy_from_user_nofault_compat(char *dst,
++		const char __user *src, long count)
++{
++	long ret;
++
++	pagefault_disable();
++	ret = strncpy_from_user(dst, src, count);
++	pagefault_enable();
++	return ret;
++}
+@@ -83 +92 @@
+-	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
++	ksu_strncpy_from_user_nofault_compat(path, *filename_user, sizeof(path));
+@@ -108 +117 @@
+-	strncpy_from_user_nofault(path, *filename_user, sizeof(path));
++	ksu_strncpy_from_user_nofault_compat(path, *filename_user, sizeof(path));
+@@ -137 +146 @@
+-	ret = strncpy_from_user_nofault(path, fn, sizeof(path));
++	ret = ksu_strncpy_from_user_nofault_compat(path, fn, sizeof(path));
+@@ -140 +149 @@
+-		ret = strncpy_from_user_nofault(path, fn, sizeof(path));
++		ret = ksu_strncpy_from_user_nofault_compat(path, fn, sizeof(path));
