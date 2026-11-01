@@ -14,10 +14,11 @@
   no toolchain fetch or build ran.
 - **Last green run:** [Toolchain lock verification 41275135426](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41275135426);
   both pinned manifests and version strings matched; no kernel compilation.
-- **Last failing run:** [UPA50 CI 41276026981](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41276026981),
-  scoped LF check attempted to open a removed documentation path. The diff
-  excludes deleted paths and absent paths are skipped.
-- **Exact next commands:** Push the deleted-path fix, then inspect
+- **Last failing run:** [UPA50 CI 41276158364](https://github.com/crypto143007-ship-it/Samsung-A50-Ultimate/actions/runs/41276158364),
+  `git diff --check` saw virtual line-ending changes from explicit source
+  attributes. Those extra patterns are removed, while the required global
+  and shell LF rules remain.
+- **Exact next commands:** Push the attribute correction, then inspect
   `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --workflow upa50-ci.yml --limit 5`
   and review failures with `gh run view <id> --log-failed`.
 

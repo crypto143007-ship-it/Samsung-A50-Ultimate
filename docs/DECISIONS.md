@@ -44,14 +44,18 @@
   strings. This is not a kernel build result.
 - **Legacy line endings:** `[VERIFIED-STATIC]` The first full-tree CI scan
   found CRLF in 56 pre-existing C/header/Makefile files. No kernel source
-  content was changed. Explicit LF attributes are retained for these
-  extensions, but this runner did not rewrite the historical blob bytes.
-  Static CI now checks every tracked shell/config input and every changed
-  source file rather than failing on untouched upstream files.
+  content was changed. The required global auto-text LF rule and explicit
+  shell-script LF rule remain. Static CI checks every tracked shell/config
+  input and every changed source file rather than rewriting untouched
+  upstream blobs.
 - **Scoped line-ending check:** `[VERIFIED-STATIC]` The initial scoped retry
   included removed documentation paths and failed with `FileNotFoundError`.
   The diff now excludes deleted paths and the scan skips paths absent from the
   checkout.
+- **Diff-format check:** `[VERIFIED-STATIC]` Explicit source-extension LF
+  attributes caused Git to report virtual line-ending changes and historical
+  trailing whitespace. Those extra patterns were removed; only the required
+  global and shell rules remain, avoiding a mass kernel-source diff.
 - **Editions and safety:** Standard excludes KernelSU/KernelSU-Next/SuSFS;
   KernelSU-Next is limited to the separate edition and pinned to official
   `v3.4.2` commit `4c706b5938665866ebe16944a481a7b91e3396af`. SuSFS is excluded.
