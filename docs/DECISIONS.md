@@ -48,6 +48,10 @@
   extensions, but this runner did not rewrite the historical blob bytes.
   Static CI now checks every tracked shell/config input and every changed
   source file rather than failing on untouched upstream files.
+- **Scoped line-ending check:** `[VERIFIED-STATIC]` The initial scoped retry
+  included removed documentation paths and failed with `FileNotFoundError`.
+  The diff now excludes deleted paths and the scan skips paths absent from the
+  checkout.
 - **Editions and safety:** Standard excludes KernelSU/KernelSU-Next/SuSFS;
   KernelSU-Next is limited to the separate edition and pinned to official
   `v3.4.2` commit `4c706b5938665866ebe16944a481a7b91e3396af`. SuSFS is excluded.

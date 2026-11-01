@@ -32,6 +32,7 @@ jobs:
           python3 - <<'PY'
           import subprocess
           import sys
+          from pathlib import Path
 
           source_extensions = {
               ".c", ".h", ".S", ".s", ".sh", ".py", ".config", ".conf",
@@ -39,7 +40,7 @@ jobs:
           }
           tracked = subprocess.check_output(["git", "ls-files", "-z"]).split(b"\0")
           changed = subprocess.check_output(
-              ["git", "diff", "--name-only", "-z", "HEAD^", "HEAD"]
+              ["git", "diff", "--name-only", "-z", "--diff-filter=ACMRT", "HEAD^", "HEAD"]
           ).split(b"\0")
           files = {
               raw.decode()
@@ -58,6 +59,8 @@ jobs:
           )
           bad = []
           for path in sorted(files):
+              if not Path(path).is_file():
+                  continue
               with open(path, "rb") as source:
                   if b"\r\n" in source.read():
                       bad.append(path)
