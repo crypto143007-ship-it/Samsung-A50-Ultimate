@@ -1,0 +1,10 @@
+# Toolchain pins. The commit IDs are fixed; manifest and version values are
+# bootstrapped by toolchain-lock.yml on ubuntu-22.04 and must then be committed.
+proton.commit=32074ae4fc8e2269569fdff26a22da037388c3e3
+proton.manifest_sha256=RECORD_IN_CI
+proton.clang_version=RECORD_IN_CI
+proton.ld_lld_version=RECORD_IN_CI
+aosp.commit=425c8149f17c8d9914bf690b4d5abe45a13fb993
+aosp.manifest_sha256=RECORD_IN_CI
+aosp.clang_version=RECORD_IN_CI
+aosp.ld_lld_version=RECORD_IN_CI

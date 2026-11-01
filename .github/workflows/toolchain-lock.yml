@@ -1,0 +1,53 @@
+name: Toolchain lock
+
+on:
+  push:
+    branches:
+      - 'upa50/**'
+    paths:
+      - 'scripts/prepare_toolchain.sh'
+      - 'toolchain.lock'
+      - '.github/workflows/toolchain-lock.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolchain-lock-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  record:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Cache Proton toolchain source
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ${{ runner.temp }}/upa50-toolchain-sources/proton
+          key: upa50-proton-32074ae4fc8e2269569fdff26a22da037388c3e3
+
+      - name: Cache AOSP toolchain source
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ${{ runner.temp }}/upa50-toolchain-sources/aosp
+          key: upa50-aosp-425c8149f17c8d9914bf690b4d5abe45a13fb993
+
+      - name: Record pinned compiler manifests
+        run: |
+          : > toolchain.lock.generated
+          : > BUILD_INFO.txt
+          ./scripts/prepare_toolchain.sh record proton
+          ./scripts/prepare_toolchain.sh record aosp
+          cat toolchain.lock.generated >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload generated lock values
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: toolchain-lock-generated
+          path: toolchain.lock.generated
+          if-no-files-found: error
+          retention-days: 7

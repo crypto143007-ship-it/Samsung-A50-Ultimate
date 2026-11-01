@@ -18,6 +18,11 @@
   pinned source commit (trust-on-first-use anchored to that Git commit); the
   resulting hashes and version strings must be committed before verify-mode
   builds can pass.
+- **Compiler refs:** `[VERIFIED-STATIC]` `git ls-remote` confirmed Proton
+  `proton` at `32074ae4fc8e2269569fdff26a22da037388c3e3` and AOSP
+  `android14-release` at `425c8149f17c8d9914bf690b4d5abe45a13fb993`.
+  Their content manifests and compiler version strings are awaiting the first
+  Ubuntu 22.04 Actions record run.
 - **Editions and safety:** Standard excludes KernelSU/KernelSU-Next/SuSFS;
   KernelSU-Next is limited to the separate edition and pinned to official
   `v3.4.2` commit `4c706b5938665866ebe16944a481a7b91e3396af`. SuSFS is excluded.

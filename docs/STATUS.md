@@ -2,14 +2,14 @@
 
 ## NEXT ACTIONS
 
-- **Current gate:** Repository cleanup and toolchain-lock workflow; baseline
-  Standard build is not started.
+- **Current gate:** Toolchain manifest bootstrap; baseline Standard build is
+  not started.
 - **Build policy:** All toolchain fetches, configuration, builds, validation,
   packaging, and release work run in GitHub Actions only.
-- **Last good commit:** `8e3c1a9567b77f0932d91b3304cdcbe38adfb9a8`.
+- **Last good commit:** `79de15d39` (repository cleanup; no build evidence).
 - **Last green/failing CI run:** None; no UPA50 Actions workflow has run.
-- **Exact next commands:** After committing and pushing cleanup plus CI files,
-  use `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --limit 5`,
+- **Exact next commands:** Push the toolchain-lock workflow, then use
+  `gh run list --repo crypto143007-ship-it/Samsung-A50-Ultimate --limit 5`,
   inspect failures with `gh run view <id> --log-failed`, and download the
   generated small lock artifact with `gh run download <id>`.
 
