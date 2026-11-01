@@ -47,7 +47,7 @@ def validate_package(package: Path, expected_edition: str | None) -> None:
             raise SystemExit(f"{package} is missing a non-empty ramdisk")
 
         if expected_edition is not None:
-            if not package.name.startswith(f"UPA50-{expected_edition}-"):
+            if not package.name.startswith(f"UPA50-2-{expected_edition.upper()}-"):
                 raise SystemExit(
                     f"{package} filename does not match edition {expected_edition}"
                 )

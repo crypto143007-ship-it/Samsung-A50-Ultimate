@@ -243,7 +243,7 @@ jobs:
           cp "$package" package-validation/
           python3 scripts/validate_release.py --release-dir package-validation \
             --expected-packages 1 \
-            --expected-name "UPA50-${{ matrix.edition }}-${{ matrix.variant }}-A${{ matrix.android }}-v0.0.0.zip" \
+            --expected-name "UPA50-2-${{ matrix.edition == 'standard' && 'STANDARD' || 'KERNELSU-NEXT' }}-${{ matrix.variant }}-A${{ matrix.android }}-v0.0.0.zip" \
             --expected-edition "${{ matrix.edition }}"
           cp "$package" artifacts/
           unzip -p "$package" Image > artifacts/Image

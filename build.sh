@@ -172,7 +172,7 @@ SET_ZIPNAME() {
             { script_echo "E: Invalid UPA50 edition: $UPA50_EDITION"; return 1; }
         [[ "$UPA50_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] ||
             { script_echo "E: Invalid UPA50 version: $UPA50_VERSION"; return 1; }
-        FILE_NAME="UPA50-${UPA50_EDITION}-${BUILD_VARIANT}-A${BUILD_ANDROID_PLATFORM}-v${UPA50_VERSION}.zip"
+        FILE_NAME="UPA50-2-${UPA50_EDITION^^}-${BUILD_VARIANT}-A${BUILD_ANDROID_PLATFORM}-v${UPA50_VERSION}.zip"
         return
     fi
 
@@ -332,6 +332,7 @@ BUILD_PACKAGE() {
         echo "ro.mint.droid.device=${BUILD_DEVICE_NAME^}"
         echo "ro.mint.droid.variant=$MINT_VARIANT"
         [[ -n "${UPA50_EDITION:-}" ]] && echo "ro.upa50.edition=$UPA50_EDITION"
+        [[ -n "${UPA50_EDITION:-}" ]] && echo "ro.upa50.generation=2"
 
         if [[ $BUILD_KERNEL_BRANCH == mainline ]]; then
             echo "ro.mint.droid.beta=false"
