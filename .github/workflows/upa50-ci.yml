@@ -25,30 +25,39 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           submodules: true
+          fetch-depth: 2
 
-      - name: Check source line endings
+      - name: Check changed source and build-input line endings
         run: |
           python3 - <<'PY'
           import subprocess
           import sys
 
-          extensions = {
+          source_extensions = {
               ".c", ".h", ".S", ".s", ".sh", ".py", ".config", ".conf",
               ".dts", ".dtsi", ".mk", ".yml", ".yaml", ".md",
           }
-          files = subprocess.check_output(["git", "ls-files", "-z"]).split(b"\0")
+          tracked = subprocess.check_output(["git", "ls-files", "-z"]).split(b"\0")
+          changed = subprocess.check_output(
+              ["git", "diff", "--name-only", "-z", "HEAD^", "HEAD"]
+          ).split(b"\0")
+          files = {
+              raw.decode()
+              for raw in tracked
+              if raw and raw.decode().endswith((".sh", ".config", ".conf"))
+          }
+          files.update(
+              raw.decode()
+              for raw in changed
+              if raw
+              and (
+                  raw.decode().rsplit("/", 1)[-1] == "Makefile"
+                  or raw.decode().rsplit("/", 1)[-1].startswith("Kconfig")
+                  or raw.decode().endswith(tuple(source_extensions))
+              )
+          )
           bad = []
-          for raw_path in files:
-              if not raw_path:
-                  continue
-              path = raw_path.decode()
-              basename = path.rsplit("/", 1)[-1]
-              if (
-                  basename != "Makefile"
-                  and not basename.startswith("Kconfig")
-                  and not path.endswith(tuple(extensions))
-              ):
-                  continue
+          for path in sorted(files):
               with open(path, "rb") as source:
                   if b"\r\n" in source.read():
                       bad.append(path)

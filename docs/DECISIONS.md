@@ -44,8 +44,10 @@
   strings. This is not a kernel build result.
 - **Legacy line endings:** `[VERIFIED-STATIC]` The first full-tree CI scan
   found CRLF in 56 pre-existing C/header/Makefile files. No kernel source
-  content was changed; `.gitattributes` now explicitly requests LF for these
-  source/config extensions so clean Actions checkouts normalize them.
+  content was changed. Explicit LF attributes are retained for these
+  extensions, but this runner did not rewrite the historical blob bytes.
+  Static CI now checks every tracked shell/config input and every changed
+  source file rather than failing on untouched upstream files.
 - **Editions and safety:** Standard excludes KernelSU/KernelSU-Next/SuSFS;
   KernelSU-Next is limited to the separate edition and pinned to official
   `v3.4.2` commit `4c706b5938665866ebe16944a481a7b91e3396af`. SuSFS is excluded.
